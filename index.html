@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>訪問ルート 本店</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#f5f7f6; --panel:#ffffff; --ink:#1d2b2e; --muted:#5f7075; --line:#d7dfe0;
+  --accent:#176f6f; --accent-soft:#dff0ee; --warn:#b85c12; --warn-soft:#fbeadb;
+  --crit:#b3261e; --crit-soft:#f9e1df; --ok:#2e7d4f; --ok-soft:#e1f2e6; --lock:#6b4ea8;
+  --slot:#f0f3f2; --slot-line:#e2e8e8; --focus:#0b6bcb;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141a1b; --panel:#1d2526; --ink:#e6ecec; --muted:#9db0b3; --line:#2f3b3d;
+  --accent:#5fc3bd; --accent-soft:#1f3a39; --warn:#f0a35e; --warn-soft:#3d2a17;
+  --crit:#f28b82; --crit-soft:#3f1f1d; --ok:#7fd39a; --ok-soft:#1c3324; --lock:#b9a3e6;
+  --slot:#212b2c; --slot-line:#2f3b3d; --focus:#7cb8ff;
+}}
+:root[data-theme="dark"]{
+  --bg:#141a1b; --panel:#1d2526; --ink:#e6ecec; --muted:#9db0b3; --line:#2f3b3d;
+  --accent:#5fc3bd; --accent-soft:#1f3a39; --warn:#f0a35e; --warn-soft:#3d2a17;
+  --crit:#f28b82; --crit-soft:#3f1f1d; --ok:#7fd39a; --ok-soft:#1c3324; --lock:#b9a3e6;
+  --slot:#212b2c; --slot-line:#2f3b3d; --focus:#7cb8ff;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;font-size:14px;line-height:1.5;display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 12px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.small{padding:2px 8px;font-size:12px;border-radius:4px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+input[type=text],input[type=number],input[type=date],select,textarea{border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel)}
+textarea{width:100%;min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+header h1{font-size:17px;margin:0;letter-spacing:.02em}
+header .sub{color:var(--muted);font-size:12px}
+header .spacer{flex:1}
+nav.tabs{display:flex;gap:2px;padding:6px 16px 0;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto}
+body.gas nav.tabs button:not([data-tab="patients"]):not([data-tab="weekly"]){display:none}
+nav.tabs button{border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;background:transparent;padding:8px 14px;color:var(--muted);white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--bg);border-color:var(--line);color:var(--ink);font-weight:600}
+nav.tabs .badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-size:11px;margin-left:6px}
+main{flex:1;min-height:0;padding:14px 16px 24px;overflow:auto}
+section.tab{display:none;height:100%}
+section.tab.active{display:block}
+.stack{display:flex;flex-direction:column;gap:10px;max-width:1340px}
+#tab-weekly.active{display:block}
+#tab-weekly .stack{gap:4px;padding-bottom:70px}
+#tab-weekly .stack>.panel:first-child{height:40vh;min-height:110px;overflow:auto}
+#tab-weekly .stack>.panel:last-child .map.vres{height:45vh;min-height:150px}
+#tab-weekly .hbar{margin:0}
+#wSideBar{display:none}
+.wchip.ingrp{box-shadow:inset 0 -3px 0 var(--gc)}
+.wchip.lp{outline:2px dashed var(--warn);outline-offset:1px}
+.waddname{width:190px;font-size:12px;padding:3px 8px;border:1.5px solid var(--accent);border-radius:12px;margin-right:6px;background:var(--panel)}
+.mk-house-w{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.mk-house{width:100%;height:100%;clip-path:polygon(50% 0,100% 45%,86% 45%,86% 100%,14% 100%,14% 45%,0 45%);display:flex;align-items:flex-end;justify-content:center;color:#fff;font-weight:900;font-size:14px;line-height:1;padding-bottom:4px;box-sizing:border-box}
+.wpoolrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wpool-l{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:2px;align-items:center}
+.wpal{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:auto;padding-left:10px;border-left:1px dashed var(--line);justify-content:flex-end}
+.wchip.palette{display:inline-flex;border:1.5px dashed var(--accent);background:var(--panel);cursor:copy}
+.wchip.place{background:#e7ecf5;border-color:#0b1f4d}
+.wchip.palette,.wchip.palette.place{background:#fff;color:var(--ink)}
+.wchip .pmk{font-style:normal;color:#fff;font-size:10px;font-weight:800;border-radius:3px;padding:0 3px;margin-right:2px;flex:none}
+.addone{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px dashed var(--accent);border-radius:8px;padding:6px 8px;background:var(--accent-soft)}
+.addone-t{font-weight:700;color:var(--accent);font-size:13px}
+.addone #aoName{width:150px}
+.addone #aoAddr{flex:1;min-width:220px}
+.addone #aoDur{width:64px}
+.geocheck{border:1.5px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.geocheck .gc-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.geocheck .gc-list{display:flex;flex-wrap:wrap;gap:4px 6px}
+.geocheck .gc-item{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:1px 8px;cursor:pointer;white-space:nowrap}
+.geocheck .gc-item b{color:var(--warn)}
+.geocheck .gc-item:hover{border-color:var(--accent)}
+.geocheck.ok{border-color:var(--ok);background:var(--ok-soft)}
+.geocheck[hidden]{display:none}
+.patsearch input[type=search]{flex:1;min-width:200px;max-width:420px;font-size:14px;padding:6px 10px;border:1.5px solid var(--accent);border-radius:8px}
+#patTable tr.sel td{background:var(--accent-soft)}
+#patTable tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+#patTable td.pick{cursor:pointer;color:var(--accent);font-weight:700}
+#patTable tr.nohit{display:none}
+.branchsel{font-weight:700;font-size:14px;padding:5px 10px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+button.mappos{background:var(--warn-soft);border:1.5px solid var(--warn);color:var(--warn);font-weight:700;font-size:13px;padding:5px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+button.mappos::before{content:'';width:16px;height:12px;border:2px solid var(--warn);border-radius:2px;box-sizing:border-box;background:linear-gradient(to bottom,transparent 55%,var(--warn) 55%)}
+button.mappos.right::before{background:linear-gradient(to right,transparent 50%,var(--warn) 50%)}
+button.mappos:hover{background:var(--warn);color:#fff}
+button.mappos:hover::before{border-color:#fff;background:linear-gradient(to bottom,transparent 55%,#fff 55%)}
+button.mappos.right:hover::before{background:linear-gradient(to right,transparent 50%,#fff 50%)}
+#tab-weekly .stack.side{flex-direction:row;align-items:stretch;max-width:none;gap:0;padding-bottom:0;min-height:420px}
+#tab-weekly .stack.side>.panel:first-child{height:auto!important;flex:0 0 var(--wsplit,56%);width:var(--wsplit,56%);min-width:420px;max-width:85%;overflow:auto}
+#tab-weekly .stack.side>#wTableBar{display:none}
+#tab-weekly .stack.side>#wSideBar{display:block}
+#tab-weekly .stack.side>.maprow{flex:1;min-width:280px;display:flex}
+#tab-weekly .stack.side .maprow>.panel{width:auto!important;max-width:none;min-width:0;flex:1;display:flex;flex-direction:column}
+#tab-weekly .stack.side #mapWeekly{height:auto!important;flex:1;min-height:200px}
+#tab-weekly .stack.side #mapWeeklyBar,#tab-weekly .stack.side #wMapWBar{display:none}
+.maprow{display:flex;align-items:stretch;gap:0}
+.maplegend{position:absolute;top:12px;right:12px;z-index:500;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.maplegend:empty{display:none}
+.wsum{font-size:12px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wsum b{font-weight:700}
+.wsum .sep{color:var(--muted);margin:0 6px}
+.maprow>.panel{flex:none;width:100%;max-width:100%;min-width:320px}
+.gutter.vg{width:14px;flex:none}
+.gutter.vg::after{left:5px}
+#tab-weekly .board{min-height:0}
+.map.vres{flex:none;height:480px;min-height:200px}
+.hbar{height:14px;cursor:row-resize;user-select:none;touch-action:none;position:relative;margin-top:-4px}
+.hbar::before{content:'';position:absolute;left:0;right:0;top:6px;height:1px;background:var(--line)}
+.hbar::after{content:'';position:absolute;left:50%;top:4px;width:48px;height:5px;margin-left:-24px;border-radius:3px;background:var(--line)}
+.hbar:hover::after,.hbar.active::after{background:var(--accent)}
+.hbar:hover::before,.hbar.active::before{background:var(--accent)}
+.zoomrow{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.zoomrow input[type=range]{flex:1;accent-color:var(--accent);height:22px}
+.zoomrow .zt{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:22px;text-align:center}
+.zoomrow datalist{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);padding:0 6px}
+.split{display:grid;grid-template-columns:minmax(320px,1fr) 10px minmax(280px,1fr);gap:6px;height:100%;min-height:520px}
+.gutter{cursor:col-resize;border-radius:5px;background:transparent;position:relative;align-self:stretch;touch-action:none}
+.gutter::before{content:'';position:absolute;left:-8px;right:-8px;top:0;bottom:0}
+.gutter::after{content:'';position:absolute;left:3px;top:50%;width:4px;height:48px;margin-top:-24px;border-radius:2px;background:var(--line)}
+.gutter:hover::after,.gutter.active::after{background:var(--accent)}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing iframe,body.resizing .map{pointer-events:none}
+@media (max-width:900px){.split{grid-template-columns:1fr!important;height:auto}.gutter{display:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.panel h2{font-size:14px;margin:0;display:flex;align-items:center;gap:8px}
+.panel h2 .hint{font-weight:400;color:var(--muted);font-size:12px}
+.map{flex:1;min-height:420px;border-radius:6px;border:1px solid var(--line);background:var(--slot)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row label{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12px}
+.muted{color:var(--muted);font-size:12px}
+.scroll{overflow:auto;min-height:0}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:middle;white-space:nowrap}
+th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel);z-index:1}
+td input[type=text],td input[type=number]{width:100%;padding:2px 5px;border-radius:4px;min-width:50px}
+td input.n{width:52px;min-width:52px}
+td input.w{min-width:90px}
+.pill{display:inline-block;padding:0 7px;border-radius:9px;font-size:11px;line-height:18px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.pill.lock{background:transparent;color:var(--lock);border:1px solid var(--lock)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--slot);border-radius:6px;padding:6px 12px;min-width:90px}
+.stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted)}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:12px;color:var(--muted)}
+.field .desc{font-size:11px;color:var(--muted)}
+/* route list */
+.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.stop{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.stop.dragover{border-color:var(--accent);background:var(--accent-soft)}
+.stop .num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12px}
+.stop .who{font-weight:600}
+.stop .time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+.stop .ctl{display:flex;gap:4px}
+.stop.bad{border-color:var(--crit)}
+.stop.locked .num{background:var(--lock)}
+.travel{font-size:11px;color:var(--muted);padding-left:38px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;vertical-align:middle}
+/* week grid */
+.gridwrap{overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table.week{width:auto;font-size:11px}
+table.week th,table.week td{border:1px solid var(--slot-line);padding:0;height:26px;text-align:center}
+table.week th{position:static;background:var(--slot);font-weight:500;min-width:40px}
+table.week th.name,table.week td.name{text-align:left;padding:0 6px;min-width:70px;position:sticky;left:0;background:var(--panel);z-index:1;font-weight:600}
+table.week td.v{background:var(--accent-soft);color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;max-width:0}
+table.week td.v.warn{background:var(--warn-soft)}
+table.week td.v.crit{background:var(--crit-soft)}
+table.week td.v.lk{box-shadow:inset 0 0 0 2px var(--lock)}
+table.week td.brk{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--slot-line) 4px 6px)}
+table.week td.off{background:var(--slot)}
+.dayhead{display:flex;align-items:center;gap:10px;margin:14px 0 6px}
+.dayhead h3{margin:0;font-size:14px}
+.worder{display:flex;flex-wrap:wrap;gap:4px 6px;padding:4px 0 6px;font-size:12px;align-items:center;height:60px;overflow-y:auto;align-content:flex-start}
+.worder .wo{border:1px solid var(--line);border-radius:12px;padding:1px 8px;cursor:pointer;background:var(--panel);white-space:nowrap}
+.worder .wo b{color:var(--accent);margin-right:2px}
+.worder .wo:hover,.worder .wo.on{background:var(--accent-soft);border-color:var(--accent)}
+.worder .wo.cancel{text-decoration:line-through;color:var(--muted)}
+.wtip{position:fixed;z-index:2100;background:var(--ink);color:var(--bg);padding:5px 9px;border-radius:6px;font-size:12px;line-height:1.35;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.3);max-width:260px;white-space:normal}
+.wtip::after{content:'';position:absolute;right:100%;bottom:6px;border:5px solid transparent;border-right-color:var(--ink)}
+.wtip.flip::after{right:auto;left:100%;border-right-color:transparent;border-left-color:var(--ink)}
+.wtip b{font-size:13px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:2000}
+.toast.show{opacity:1}
+.board{display:flex;flex-direction:column;gap:6px}
+table.wk{border-collapse:collapse;font-size:11px;width:100%;min-width:860px;table-layout:fixed}
+table.wk th,table.wk td{border:1px solid var(--slot-line);padding:0;height:34px;text-align:center;vertical-align:middle}
+table.wk th{position:sticky;top:0;background:var(--slot);font-weight:500;z-index:2}
+table.wk th.name,table.wk td.name{position:sticky;left:0;z-index:3;width:110px;text-align:left;padding:0 6px;font-weight:600;background:var(--panel)}
+table.wk th.name{z-index:4}
+table.wk td.name .lchk{display:flex;align-items:center;gap:6px;color:inherit}
+table.wk td.name .lchk input{cursor:pointer;width:14px;height:14px;flex:none}
+table.wk td.name .nm{cursor:pointer;padding:1px 4px;border-radius:4px;font-size:15px;line-height:1.15;letter-spacing:.02em}
+table.wk td.name .nm:hover{background:rgba(0,0,0,.12)}
+table.wk td.name small{display:block;font-weight:400;opacity:.85;font-size:10px;line-height:1.1}
+table.wk td.slot{background:var(--panel);cursor:default;overflow:hidden}
+table.wk td.slot.drop,table.wk td.other.drop{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+table.wk td.slot .tr{display:block;font-size:9px;color:var(--muted)}
+table.wk tr.pool td{background:var(--slot)}
+table.wk tr.sel td.slot{background:var(--accent-soft)}
+.wchip{display:flex;align-items:center;gap:1px;margin:1px;padding:2px 3px;border-radius:5px;background:var(--accent-soft);border:1px solid transparent;font-weight:600;cursor:grab;white-space:nowrap;overflow:hidden;font-size:11px;line-height:1.2;position:relative}
+.wchip .wn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wchip .ot,.wchip .pill,.wchip .cn{flex:none}
+.wchip .cn{font-weight:700;margin-left:1px;color:var(--accent)}
+.wchip.unm{background:var(--slot);color:var(--muted);border-style:dashed;border-color:var(--line)}
+.wchip.cancel{text-decoration:line-through;color:var(--muted);background:transparent;border-color:var(--line)}
+.wchip.conflict{background:var(--crit-soft);border-color:var(--crit)}
+.wchip.moved{border-color:var(--accent)}
+.wchip.dragging{opacity:.35}
+table.wk td.name[draggable]{cursor:grab}
+table.wk tr.rowdragging td{opacity:.4}
+table.wk tr.rowdrop td{box-shadow:inset 0 3px 0 var(--accent)}
+.wchip.picked{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
+#wBoard.picking td.slot{cursor:pointer}
+#wBoard.picking td.slot:hover{background:var(--accent-soft)}
+.wchip .x{position:absolute;right:0;top:0;border:none;background:var(--panel);color:var(--muted);font-size:10px;padding:0 3px;cursor:pointer;display:none;border-radius:3px}
+.wchip:hover .x{display:block}
+.wchip .pill{font-size:9px;line-height:14px;padding:0 4px;margin-left:2px}
+.wchip small.ot{display:block;font-weight:400;color:var(--muted);font-size:9px;line-height:1}
+.lane{display:grid;grid-template-columns:96px 1fr;border:1px solid var(--line);border-radius:6px;background:var(--panel);min-height:44px}
+.lane.sel{box-shadow:0 0 0 2px var(--ink)}
+.lane.pool{border-style:dashed}
+.lane .lname{padding:6px 8px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);font-size:12px}
+.lane .lname small{font-weight:400;opacity:.85}
+.lane .lname .lchk{display:flex;align-items:center;gap:4px;cursor:pointer;color:inherit;font-size:12px}
+.lane .lname input[type=checkbox]{accent-color:#fff;margin:0}
+.lane .lname .pill{background:rgba(255,255,255,.9);color:var(--crit)}
+.lane .chips{display:flex;flex-wrap:wrap;gap:4px;padding:5px 6px;align-items:center;min-height:40px}
+.lane.dragover .chips{background:var(--accent-soft)}
+.chip{display:inline-grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:2px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:2px 4px 3px 6px;background:var(--bg);font-size:12px;cursor:grab;white-space:nowrap;line-height:1.25;min-width:56px}
+.chip .cname{grid-column:1;grid-row:2;font-weight:600}
+.chip .cbadge{grid-column:2;grid-row:2;display:flex;gap:2px}
+.chip .x{grid-column:2;grid-row:1;justify-self:end}
+.chip select{grid-column:1;grid-row:1;font-size:11px;font-weight:500}
+.chip:active{cursor:grabbing}
+.chip.dragging{opacity:.35}
+.drop-ind{display:inline-block;width:4px;height:40px;border-radius:2px;background:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);margin:0 2px;vertical-align:middle;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+.lane.dragover .chips{background:var(--accent-soft)}
+.chip.unm{border-style:dashed;color:var(--muted)}
+.chip.cancel{text-decoration:line-through;color:var(--muted)}
+.chip.conflict{border-color:var(--crit);background:var(--crit-soft)}
+.chip.moved{border-color:var(--accent)}
+.chip select{border:none;background:transparent;font-size:12px;padding:0;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600;cursor:pointer}
+.chip .x{border:none;background:transparent;padding:0 2px;color:var(--muted);cursor:pointer;font-size:11px;line-height:1}
+.tr{font-size:10px;color:var(--muted);white-space:nowrap;align-self:center}
+.marker-num.hl{transform:scale(calc(var(--pin,1)*1.6));border-color:#ffd600;box-shadow:0 0 0 3px rgba(255,214,0,.6),0 2px 6px rgba(0,0,0,.5)}
+.marker-num{transform:scale(var(--pin,1));transition:transform .15s;background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.marker-office{background:#333;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;white-space:nowrap;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.leaflet-container{font:inherit}
+ul.plain{margin:0;padding-left:18px}
+details summary{cursor:pointer;color:var(--muted);font-size:12px}
+.warnlist li{margin:2px 0}
+kbd{font-family:inherit;background:var(--slot);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">訪問ルート 本店</h1>
+  <select id="branchSel" class="branchsel" hidden title="支店を切り替える（データは支店ごとに別）"></select>
+  <span class="sub" id="weekLabel">週の開始日 未設定</span>
+  <span class="spacer"></span>
+  <span class="muted" id="syncStatus"></span>
+  <button class="small" id="btnSharedReload" hidden title="他の人の編集を取り込む">共有データを再読み込み</button>
+  <label class="muted" id="autosaveWrap"><input type="checkbox" id="autosave" checked> この端末のブラウザに自動保存</label>
+  <button id="btnSave">ファイルに保存</button>
+  <button id="btnLoad">ファイルから読込</button>
+  <input type="file" id="fileLoad" accept=".json" hidden>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="patients" aria-selected="true">① 利用者と住所<span class="badge" id="bPat">0</span></button>
+  <button role="tab" data-tab="staff">② スタッフ<span class="badge" id="bStaff">0</span></button>
+  <button role="tab" data-tab="settings">③ 設定</button>
+  <button role="tab" data-tab="plan">④ 作成</button>
+  <button role="tab" data-tab="route">⑤ ルート</button>
+  <button role="tab" data-tab="grid">⑥ 週間表</button>
+  <button role="tab" data-tab="weekly">⑦ 週間シフト</button>
+</nav>
+<main>
+
+<!-- ① 利用者 -->
+<section class="tab active" id="tab-patients">
+  <div class="split">
+    <div class="panel">
+      <h2>利用者と訪問条件 <span class="hint">1人1行。曜日や時間帯が回によって違う人は2行に分ける</span></h2>
+      <details>
+        <summary>貼り付け形式（列の順）と書き方</summary>
+        <div class="muted" style="padding:6px 0">
+          スプレッドシートで範囲を選んでコピーし、下に貼り付けます。1行目に見出しがあっても構いません。<br>
+          <b>氏名 / 住所 / 訪問時間(分) / 曜日 / 時間帯 / 回数 / 固定時刻 / 備考</b><br>
+          曜日: 「月,木」「平日」「毎日」「土日」、空欄＝いつでも。　時間帯: 「15:00-18:00」「15時以降」「午前」「午後」、空欄＝いつでも。<br>
+          回数: 週の訪問回数（曜日を回数分書けばその曜日に固定）。　固定時刻: 「10:00」（点滴など時刻が決まっているとき）。<br>
+          担当制ではないため担当者の列はありません（古い形式の主担当・副担当の列が混ざっていても無視します）。<br>週間シフトの表記が氏名と違う人（1文字の姓など）は、備考に「略称:森」のように書くと⑦でその表記を優先して照合します。
+        </div>
+      </details>
+      <textarea id="patText" placeholder="ここに貼り付け（タブ区切り）"></textarea>
+      <div class="row">
+        <button class="primary" id="btnParsePat">取り込む（置き換え）</button>
+        <button id="btnAppendPat">追加で取り込む</button>
+        <button id="btnGeocode">住所→地図に配置</button>
+        <button id="btnGeoCheck" title="保存されているピンと、住所から出し直した位置を比べます">位置を点検</button>
+        <button id="btnClearPat" class="small">全て消す</button>
+        <span class="muted" id="geoStatus"></span>
+      </div>
+      <div class="addone" id="addOne">
+        <span class="addone-t">1名だけ追加</span>
+        <input type="text" id="aoName" placeholder="氏名（例: 山田 花子）" autocomplete="off">
+        <input type="text" id="aoAddr" placeholder="住所（例: 大阪市東住吉区東田辺3-27-22）" autocomplete="off">
+        <label class="muted">訪問時間 <input type="number" id="aoDur" value="30" min="10" step="10">分</label>
+        <button class="primary" id="btnAddOne">追加して地図に配置</button>
+      </div>
+      <div class="geocheck" id="geoCheck" hidden></div>
+      <div class="row muted">
+        <span class="pill ok">番地まで一致</span><span class="pill warn">町丁目まで（ピンを確認）</span><span class="pill crit">見つからず</span>
+        <span>ピンはドラッグで動かせます（動かした位置を優先）</span>
+      </div>
+      <div class="row patsearch">
+        <input type="search" id="patSearch" placeholder="名前・住所で検索（Enterで地図に表示）" autocomplete="off">
+        <span class="muted" id="patSearchCount"></span>
+      </div>
+      <div class="scroll" style="flex:1">
+        <table id="patTable">
+          <thead><tr><th>#</th><th>氏名</th><th>住所</th><th>分</th><th>曜日</th><th>時間帯</th><th>回</th><th>固定</th><th>備考</th><th>位置</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row">
+        <button class="small" id="btnGsiAll">見つからない住所を国土地理院で検索（住所を外部送信）</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>地図で位置を確認 <span class="hint">クリックで氏名、ドラッグで修正</span></h2>
+      <div class="map" id="mapPat"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ② スタッフ -->
+<section class="tab" id="tab-staff">
+  <div class="split">
+    <div class="panel">
+      <h2>ルートの作り方</h2>
+      <div class="row"><button class="primary" id="btnGasLoad">全体シフトから読み込む</button><span class="muted" id="gasStatus">③設定の「週の開始日」の週を、GASウェブアプリ経由で読み取ります（読み取りのみ）</span></div>
+      <div class="row"><label><input type="radio" name="staffMode" id="modeAnon" value="anon"> 人数だけ指定（ルート1・2…として作成）</label></div>
+      <div class="row" id="anonRow" style="padding-left:20px">
+        <span class="muted">外回りの人数</span>
+        <label>日 <input type="number" class="n" id="cnt0" min="0" max="20" style="width:52px"></label>
+        <label>月 <input type="number" class="n" id="cnt1" min="0" max="20" style="width:52px"></label>
+        <label>火 <input type="number" class="n" id="cnt2" min="0" max="20" style="width:52px"></label>
+        <label>水 <input type="number" class="n" id="cnt3" min="0" max="20" style="width:52px"></label>
+        <label>木 <input type="number" class="n" id="cnt4" min="0" max="20" style="width:52px"></label>
+        <label>金 <input type="number" class="n" id="cnt5" min="0" max="20" style="width:52px"></label>
+        <label>土 <input type="number" class="n" id="cnt6" min="0" max="20" style="width:52px"></label>
+        <button class="primary" id="btnApplyAnon">この人数でルート枠を作る</button>
+      </div>
+      <div class="row"><label><input type="radio" name="staffMode" id="modeNamed" value="named"> スタッフ名で指定（全体シフトを貼り付け）</label></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0">
+      <h2>出勤するスタッフ <span class="hint">「スタッフ名で指定」のとき。全体シフトの氏名列と1週間分の勤務コードをコピーして貼り付け</span></h2>
+      <div class="muted">1行＝1人。「氏名<kbd>Tab</kbd>日<kbd>Tab</kbd>休<kbd>Tab</kbd>…」の順（日〜土の7日）。氏名だけの行は月〜金が出勤になります。<br>
+        休・有・公・夏・創休・リ・入・夜・明・早・遅・常駐 は非出勤として読みます。施設常駐の日が「日」のままなら、右の表でチェックを外してください。</div>
+      <textarea id="staffText" placeholder="スタッフA	日	日	休	日	日	日	休"></textarea>
+      <div class="row">
+        <button class="primary" id="btnParseStaff">取り込む（置き換え）</button>
+        <button id="btnAddStaff">1人追加</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>出勤と勤務時間 <span class="hint">チェック＝外回りで出勤。時刻は空欄なら設定の既定（9:00〜18:00）</span></h2>
+      <div class="scroll" style="flex:1">
+        <table id="staffTable"><thead><tr><th>氏名</th><th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>開始〜終了（任意）</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="muted">「開始〜終了」は 10:00-19:00 のように書くと全曜日に適用。実働8時間（休憩込み9時間）を超えると警告が出ます。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ③ 設定 -->
+<section class="tab" id="tab-settings">
+  <div class="panel">
+    <h2>設定</h2>
+    <div class="settings-grid">
+      <div class="field"><label for="sWeekStart">週の開始日（日曜）</label><input type="date" id="sWeekStart"><span class="desc">週間表の日付ラベルに使います</span></div>
+      <div class="field"><label for="sOfficeAddr">月曜の朝会の事務所（住所）</label><input type="text" id="sOfficeAddr"><span class="desc">月曜はここを出発。<button class="small" id="btnGeoOffice">地図に配置</button> <span id="officeGeo" class="muted"></span></span></div>
+      <div class="field"><label for="sMondayStart">月曜の出発時刻</label><input type="text" id="sMondayStart" class="n"><span class="desc">朝会が終わる時刻。1件目はここからの移動時間の後</span></div>
+      <div class="field"><label for="sDefStart">既定の勤務 開始〜終了</label><div class="row"><input type="text" id="sDefStart" class="n" style="width:70px"> 〜 <input type="text" id="sDefEnd" class="n" style="width:70px"></div><span class="desc">変形労働時間制。終了を過ぎても20:00までは組みますが警告します</span></div>
+      <div class="field"><label for="sMaxSpan">1日の拘束上限（分）</label><input type="number" id="sMaxSpan" class="n"><span class="desc">実働8時間＋休憩1時間＝540</span></div>
+      <div class="field"><label for="sBreakS">昼休憩を取る時間帯 と 長さ（分）</label><div class="row"><input type="text" id="sBreakS" class="n" style="width:70px"> 〜 <input type="text" id="sBreakE" class="n" style="width:70px"> <input type="number" id="sBreakMin" class="n" style="width:70px"></div><span class="desc">拘束6時間を超える日はこの時間帯に休憩を確保</span></div>
+      <div class="field"><label for="sSpeed">車の平均速度（km/h）</label><input type="number" id="sSpeed" class="n"><span class="desc">大阪市内の目安 20</span></div>
+      <div class="field"><label for="sFactor">道のり係数</label><input type="number" id="sFactor" class="n" step="0.05"><span class="desc">直線距離×この値を道のりとみなす（都市部 1.3）</span></div>
+      <div class="field"><label for="sParking">駐車・移動の固定時間（分）</label><input type="number" id="sParking" class="n"><span class="desc">1件ごとに必ずかかる時間</span></div>
+      <div class="field"><label for="sGrid">開始時刻の刻み（分）</label><select id="sGrid"><option value="30">30分（週間シフトの列に合わせる）</option><option value="15">15分</option><option value="5">5分</option></select></div>
+      <div class="field"><label for="sLatePen">18:00以降の重み</label><input type="number" id="sLatePen" class="n" step="0.5"><span class="desc">大きいほど残業を避ける（1分あたりの移動時間換算）</span></div>
+      <div class="field"><label for="sGasUrl">全体シフト読み取りURL（GASウェブアプリ）</label><input type="text" id="sGasUrl" placeholder="https://script.google.com/macros/s/.../exec"><span class="desc">gas/設定手順.md の手順で作ったURL</span></div>
+      <div class="field"><label for="sGasToken">合言葉（TOKEN）</label><input type="text" id="sGasToken"><span class="desc">Code.gs の TOKEN と同じ文字列</span></div>
+      <div class="field"><label for="sStrictWin">希望時間帯の扱い</label><select id="sStrictWin"><option value="0">できるだけ守る（外れたら警告）</option><option value="1">厳守（外れるなら未割当）</option></select><span class="desc">実績から推定した時間帯なら「できるだけ」が無難</span></div>
+      <div class="field"><label for="sDayFallback">指定曜日に入らないとき</label><select id="sDayFallback"><option value="1">別の曜日に入れて警告</option><option value="0">未割当のままにする</option></select></div>
+      <input type="hidden" id="sSecPen" value="0">
+    </div>
+    <div class="row"><button class="primary" id="btnSaveSettings">設定を反映</button><span class="muted">反映後に④で作り直すと結果に反映されます</span></div>
+  </div>
+</section>
+
+<!-- ④ 作成 -->
+<section class="tab" id="tab-plan">
+  <div class="panel">
+    <h2>週間ルートを作成</h2>
+    <div class="row">
+      <button class="primary" id="btnPlan">作成する</button>
+      <label><input type="checkbox" id="keepLocks" checked> 固定した訪問は動かさない</label>
+      <label><input type="checkbox" id="improve" checked> 作成後に入れ替えで改善する（数秒）</label>
+      <span class="muted" id="planStatus"></span>
+    </div>
+    <div class="stats" id="planStats"></div>
+    <div class="split" style="min-height:0;height:auto">
+      <div class="panel">
+        <h2>割り当てられなかった訪問 <span class="hint">条件を緩めるか⑤で手で入れる</span></h2>
+        <div class="scroll" style="max-height:320px"><table id="unassignedTable"><thead><tr><th>氏名</th><th>条件</th><th>理由</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h2>警告</h2>
+        <div class="scroll" style="max-height:320px"><ul class="plain warnlist" id="warnList"></ul></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>スタッフ×曜日の件数 <span class="hint">クリックで⑤のルートへ</span></h2>
+      <div class="scroll"><table id="loadTable"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ ルート -->
+<section class="tab" id="tab-route">
+  <div class="split">
+    <div class="panel">
+      <div class="row">
+        <select id="rStaff"></select>
+        <select id="rDay"></select>
+        <label><input type="checkbox" id="rAll"> その日の全員を地図に表示</label>
+      </div>
+      <div class="stats" id="rStats"></div>
+      <div class="row muted"><span class="pill lock">固定</span> は作り直しても動きません。行はドラッグまたは↑↓で並べ替え。</div>
+      <div class="scroll" style="flex:1"><ol class="stops" id="stops"></ol></div>
+      <div class="row">
+        <select id="rAdd" style="max-width:320px"></select>
+        <button id="btnAddStop">このルートに追加</button>
+        <button class="small" id="btnOptRoute">この日の順番だけ最適化</button>
+      </div>
+      <div class="warnlist muted" id="rWarn"></div>
+    </div>
+    <div class="panel">
+      <h2>ルート地図 <span class="hint">番号＝訪問順。月曜は事務所から</span></h2>
+      <div class="map" id="mapRoute"></div>
+      <div class="legend" id="rLegend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ 週間表 -->
+<section class="tab" id="tab-grid">
+  <div class="panel">
+    <div class="row">
+      <h2 style="margin:0">週間表 <span class="hint">週間シフトと同じ30分列（A〜AE列の並び）でコピーできます</span></h2>
+      <span class="spacer" style="flex:1"></span>
+      <button id="btnCopyWeek">1週間分をコピー（A〜AE列）</button>
+      <button id="btnCopyList">一覧形式でコピー</button>
+    </div>
+    <div class="muted">コピーしたものを週間シフトに貼るかどうかはご自身の判断で。名前は開始の列にだけ入り、続きの列は空欄です。</div>
+    <div id="gridArea"></div>
+  </div>
+</section>
+<!-- ⑦ 週間シフト（実際の予定） -->
+<section class="tab" id="tab-weekly">
+  <div class="stack">
+    <div class="panel">
+      <div class="row">
+        <label class="muted">週の開始日（日曜） <input type="date" id="wWeekStart"></label>
+        <button class="primary" id="btnWeeklyLoad">週間シフトを読み込む</button>
+        <select id="wDay"></select>
+        <label><input type="checkbox" id="wAll"> 全員にチェック</label>
+        <label id="wShowResWrap"><input type="checkbox" id="wShowRes"> 常駐も表示</label>
+        <label id="wShowRehabWrap"><input type="checkbox" id="wShowRehab"> リハも表示</label>
+        <button class="small" id="btnWReset" title="この日だけ、読み込んだときの並びに戻す">この日を元に戻す</button>
+        <button id="btnMapPos" class="mappos" title="地図を表の下に置くか右に置くか（この端末だけの設定）">地図: 下</button>
+        <span class="muted" id="weeklyStatus"></span>
+        <span class="spacer" style="flex:1"></span>
+        <span class="wsum" id="wStats"></span>
+      </div>
+      <div class="worder" id="wOrder"></div>
+      <div class="board" id="wBoard"></div>
+      <div class="wtip" id="wTip" hidden></div>
+      <datalist id="wAddList"></datalist>
+      <div class="muted" id="wNote" hidden></div>
+    </div>
+    <div class="gutter vg" id="wSideBar" title="ドラッグで表と地図の幅を変更、ダブルクリックで元に戻す"></div>
+    <div class="hbar" id="wTableBar" title="ドラッグで表の高さを変更"></div>
+    <div class="maprow"><div class="panel" id="wMapPanel" style="padding:6px;position:relative">
+      <div class="map vres" id="mapWeekly"></div>
+      <div class="legend maplegend" id="wLegend"></div>
+      <div class="hbar" id="mapWeeklyBar" title="ドラッグで地図の高さを変更"></div>
+    </div><div class="gutter vg" id="wMapWBar" title="ドラッグで地図の横幅を変更"></div></div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module">import * as m from 'https://cdn.jsdelivr.net/npm/@geolonia/normalize-japanese-addresses@3.1.3/dist/main-esm.mjs';window.normalize=m;window.dispatchEvent(new Event('nja-ready'));</script>
+<script type="text/plain" id="appsrc">
+'use strict';
+/* ========= 基本 ========= */
+const DAYS=['日','月','火','水','木','金','土'];
+const REST_RE=/^(休|有|公|夏|創|リ|入|夜|明|早|遅|欠|産|育|年|特|研|常駐|施設)/;
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const hm=m=>{m=Math.round(m);const h=Math.floor(m/60),mm=m%60;return `${h}:${String(mm).padStart(2,'0')}`;};
+const parseHM=s=>{if(s==null)return null;s=String(s).trim().replace(/[０-９：]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace('：',':');let m=s.match(/^(\d{1,2})(?::(\d{2}))?\s*時?\s*(\d{1,2})?\s*分?$/);if(!m)return null;const h=+m[1],mi=+(m[2]||m[3]||0);if(h>29||mi>59)return null;return h*60+mi;};
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2200);};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const DEFAULT_SETTINGS={weekStart:'',officeAddr:(window.GAS_CFG&&window.GAS_CFG.cfg&&window.GAS_CFG.cfg.officeAddr!=null)?window.GAS_CFG.cfg.officeAddr:'大阪府大阪市東住吉区東田辺3-27-22',officeLat:null,officeLng:null,mondayStart:600,defStart:540,defEnd:1080,maxSpan:540,breakS:660,breakE:840,breakMin:60,speed:20,factor:1.3,parking:5,grid:30,latePen:2,secPen:15,dayStart:420,dayEnd:1200,strictWin:false,winPen:3,dayFallback:true,anonMode:false,dayCounts:[3,5,5,4,5,4,4],gasUrl:'',gasToken:''};
+let state={patients:[],staff:[],settings:{...DEFAULT_SETTINGS},routes:{},unassigned:[]};
+
+/* ========= サンプル ========= */
+const SAMPLE=[
+ ['利用者A','大阪市東住吉区東田辺3-27-22','60','平日','','2','','スタッフA','スタッフB','サンプル'],
+ ['利用者B','大阪市東住吉区駒川1-15-8','60','月,木','15:00-18:00','2','','スタッフA','',''],
+ ['利用者C','大阪市東住吉区湯里2-3-10','30','','午前','3','','スタッフB','スタッフA',''],
+ ['利用者D','大阪市東住吉区針中野2-7-17','90','火','','1','10:00','','',''],
+ ['利用者E','大阪市東住吉区田辺4-9-2','60','平日','13:00-17:00','1','','スタッフC','',''],
+ ['利用者F','大阪市東住吉区杭全7-10-4','60','','','2','','','',''],
+ ['利用者G','大阪市東住吉区西今川3-1-1','30','土','','1','','スタッフB','',''],
+ ['利用者H','大阪市東住吉区山坂2-8-6','60','月,水,金','','3','','スタッフA','スタッフC','']
+];
+const SAMPLE_STAFF=[['スタッフA','日','日','日','休','日','日','休'],['スタッフB','休','日','日','日','日','休','日'],['スタッフC','日','休','日','日','休','日','日']];
+
+/* ========= 解析 ========= */
+function splitRows(text){return text.replace(/\r/g,'').split('\n').map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim()).map(l=>l.includes('\t')?l.split('\t'):l.split(/,|，|、(?=\S)/));}
+function parseDays(s){s=String(s||'').trim();if(!s)return [0,1,2,3,4,5,6];if(/平日/.test(s))return [1,2,3,4,5];if(/毎日|全日/.test(s))return [0,1,2,3,4,5,6];const out=[];for(const c of s){const i=DAYS.indexOf(c);if(i>=0&&!out.includes(i))out.push(i);}if(/土日|週末/.test(s)){for(const i of [0,6])if(!out.includes(i))out.push(i);}return out.length?out.sort():[0,1,2,3,4,5,6];}
+function parseWin(s,S){s=String(s||'').trim().replace(/[０-９：〜～－]/g,c=>c==='〜'||c==='～'?'-':c==='－'?'-':c===':'||c==='：'?':':String.fromCharCode(c.charCodeAt(0)-0xFEE0));if(!s)return null;if(/^午前|^AM/i.test(s))return [S.dayStart,720];if(/^午後|^PM/i.test(s))return [780,S.dayEnd];let m=s.match(/^(\d{1,2}(?::\d{2})?)\s*時?\s*(?:-|以降|から|〜)\s*(\d{1,2}(?::\d{2})?)?\s*時?\s*(まで)?$/);if(m){const a=parseHM(m[1]),b=m[2]?parseHM(m[2]):S.dayEnd;if(a!=null)return [a,b??S.dayEnd];}m=s.match(/^(?:-|〜|~)?\s*(\d{1,2}(?::\d{2})?)\s*時?\s*まで$/);if(m){const b=parseHM(m[1]);if(b!=null)return [S.dayStart,b];}const t=parseHM(s);if(t!=null)return [t,S.dayEnd];return null;}
+function parsePatients(text,S){const rows=splitRows(text);if(!rows.length)return [];let cols={name:0,addr:1,dur:2,days:3,win:4,count:5,fixed:6,primary:-1,secondary:-1,note:7};const h=rows[0].map(c=>c.trim());const isHeader=h.some(c=>/氏名|名前|利用者|住所/.test(c))&&!/[市区町村]/.test(h[1]||'');if(isHeader){const f=(re)=>h.findIndex(c=>re.test(c));const m={name:f(/氏名|名前|利用者/),addr:f(/住所/),dur:f(/訪問時間|分|時間\(|所要/),days:f(/曜日/),win:f(/時間帯|希望/),count:f(/回数|回\/週|回/),fixed:f(/固定/),primary:f(/^主担当|^担当/),secondary:f(/副担当|副/),note:f(/備考|メモ|注意/)};for(const k in m)if(m[k]>=0)cols[k]=m[k];if(m.dur<0)cols.dur=-1;rows.shift();}const out=[];for(const r of rows){const g=k=>cols[k]>=0?(r[cols[k]]||'').trim():'';const name=g('name');if(!name)continue;const fixed=parseHM(g('fixed'));const days=parseDays(g('days'));const daysGiven=!!g('days').trim();const cv=String(g('count')||'').trim();const count=cv==='0'?0:Math.max(1,parseInt(cv)||(daysGiven?days.length:1));let win=parseWin(g('win'),S);if(fixed!=null)win=null;out.push({id:uid(),name,addr:g('addr'),dur:parseInt(g('dur'))||60,days,daysGiven,win,count,fixed,primary:g('primary'),secondary:g('secondary').split(/[,、，\/ ]+/).filter(Boolean).join(','),note:g('note'),lat:null,lng:null,level:0,manual:false});}return out;}
+function parseStaff(text){const rows=splitRows(text);const out=[];for(const r of rows){const name=(r[0]||'').trim();if(!name||/氏名|名前|スタッフ/.test(name))continue;const codes=r.slice(1,8).map(c=>c.trim());let work;if(codes.some(c=>c)){work=[0,1,2,3,4,5,6].map(d=>{const c=codes[d]||'';return !!c&&!REST_RE.test(c);});}else work=[false,true,true,true,true,true,false];out.push({id:uid(),name,work,winText:''});}return out;}
+function staffWin(st,S){const t=(st.winText||'').trim();if(!t)return [S.defStart,S.defEnd];const w=parseWin(t,S);return w?[w[0],w[1]]:[S.defStart,S.defEnd];}
+function nameMatch(a,b){a=(a||'').trim();b=(b||'').trim();if(!a||!b)return false;return a===b||a.startsWith(b)||b.startsWith(a);}
+function eligibleStaff(p){return state.staff.map((s,i)=>({i,rank:0}));} /* 担当制ではないため担当指定は使わない */
+
+/* ========= 距離・時間 ========= */
+function hav(a,b){const R=6371,toR=x=>x*Math.PI/180;const dLat=toR(b.lat-a.lat),dLng=toR(b.lng-a.lng);const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s));}
+function travel(a,b){const S=state.settings;if(!a||!b||a.lat==null||b.lat==null)return {min:S.parking+10,km:null};const raw=hav(a,b);if(raw<0.05)return {min:0,km:0};const km=raw*S.factor;return {min:S.parking+km/S.speed*60,km};}
+const office=()=>state.settings.officeLat!=null?{lat:state.settings.officeLat,lng:state.settings.officeLng}:null;
+const pById=id=>state.patients.find(p=>p.id===id);
+const ceilG=(t,g)=>Math.ceil(t/g)*g;
+
+/* route = [{pid,locked}] ; timeline を計算 */
+function timeline(route,si,d,forceBreakAt){const S=state.settings,st=state.staff[si];if(!st)return null;const [ws,we]=staffWin(st,S);let t=ws;let prev=null;if(d===1){t=Math.max(t,S.mondayStart);prev=office();}const stops=[];let prevEnd=null;let brk=null;let viol=[];let softWarn=[];let winOver=0;for(let i=0;i<route.length;i++){const p=pById(route[i].pid);if(!p){stops.push(null);continue;}let tr={min:0,km:0};if(prev){tr=travel(prev,p);}else if(d===1&&!office()){tr={min:S.parking,km:null};}let start=t+tr.min;if(i===0&&!prev)start=t;if(forceBreakAt===i&&!brk){const bs=Math.max(prevEnd??start,S.breakS);brk=[bs,bs+S.breakMin];start=Math.max(start,bs+S.breakMin);}if(p.win)start=Math.max(start,p.win[0]);if(p.fixed!=null){if(start>p.fixed+0.01)viol.push(`${p.name} 固定${hm(p.fixed)}に間に合わない（到着${hm(start)}）`);start=Math.max(start,p.fixed);start=p.fixed>=start?p.fixed:start;}else start=ceilG(start,S.grid);const end=start+p.dur;if(p.win&&end>p.win[1]+0.01){const msg=`${p.name} 希望時間帯 ${hm(p.win[0])}〜${hm(p.win[1])} を外れる（${hm(start)}〜${hm(end)}）`;if(S.strictWin)viol.push(msg);else{softWarn.push(msg);winOver+=end-p.win[1];}}if(p.fixed!=null&&Math.abs(start-p.fixed)>0.01)viol.push(`${p.name} 固定時刻${hm(p.fixed)}に置けない`);stops.push({pid:p.id,start,end,travel:tr.min,km:tr.km,slack:(i===0&&d!==1)?0:start-(t+tr.min)});prev=p;t=end;prevEnd=end;}const real=stops.filter(Boolean);const first=real.length?real[0].start:null,last=real.length?real[real.length-1].end:null;const span=real.length?last-first:0;const res={stops,first,last,span,brk,viol,warn:softWarn,winOver,travelMin:real.reduce((a,s)=>a+s.travel,0),km:real.reduce((a,s)=>a+(s.km||0),0)};if(real.length){if(last>we)res.warn.push(`終了${hm(last)}が勤務終了${hm(we)}を過ぎる`);if(last>S.dayEnd)res.viol.push(`終了${hm(last)}が${hm(S.dayEnd)}を過ぎる`);if(span>S.maxSpan)res.viol.push(`拘束${Math.round(span/60*10)/10}時間が上限${S.maxSpan/60}時間を超える`);}return res;}
+function naturalBreak(tl){const S=state.settings;const real=tl.stops.filter(Boolean);for(let i=1;i<real.length;i++){const gs=Math.max(real[i-1].end,S.breakS),ge=Math.min(real[i].start,S.breakE);if(ge-gs>=S.breakMin)return [gs,gs+S.breakMin];}if(real.length){const gs=Math.max(real[real.length-1].end,S.breakS);if(gs+S.breakMin<=S.breakE&&real[real.length-1].end<=S.breakE)return [gs,gs+S.breakMin];}return null;}
+function schedule(route,si,d){const S=state.settings;let tl=timeline(route,si,d,-1);if(!tl)return null;if(tl.span<=360){tl.brk=null;return tl;}const nb=naturalBreak(tl);if(nb){tl.brk=nb;return tl;}let best=null;for(let k=1;k<route.length;k++){const p=pById(route[k-1].pid);if(!p)continue;const t2=timeline(route,si,d,k);if(!t2||!t2.brk)continue;if(t2.brk[1]>S.breakE+0.01)continue;if(t2.viol.length>tl.viol.length)continue;if(!best||t2.last<best.last)best=t2;}if(best)return best;tl.warn.push('昼休憩1時間が取れない');tl.brk=null;return tl;}
+function routeCost(tl,si){const S=state.settings;if(!tl)return 0;if(tl.viol.length)return 1e6;const st=state.staff[si];const [,we]=staffWin(st,S);let c=tl.travelMin;if(tl.last!=null&&tl.last>we)c+=(tl.last-we)*S.latePen;if(tl.warn.some(w=>w.startsWith('昼休憩')))c+=60;c+=(tl.winOver||0)*S.winPen;const n=tl.stops.filter(Boolean).length;c+=n*n*1.5;return c;}
+const key=(si,d)=>`${si}|${d}`;
+function getRoute(si,d){return state.routes[key(si,d)]||(state.routes[key(si,d)]=[]);}
+
+/* ========= 割当 ========= */
+function spacingPen(p,d,except){const days=[];for(const k in state.routes){const [si,dd]=k.split('|').map(Number);for(const v of state.routes[k]){if(v.pid===p.id&&v!==except)days.push(dd);}}if(!days.length)return 0;if(days.includes(d))return p.count>p.days.length?0:400;const minGap=p.count>=4?1:p.count===3?2:3;let pen=0;for(const x of days){const g=Math.min(Math.abs(x-d),7-Math.abs(x-d));if(g<minGap)pen+=40*(minGap-g);}return pen;}
+function bestInsertion(p,except,allowedDays){const S=state.settings;const reasons=new Set();const el=eligibleStaff(p);const tryList=(list)=>{let best=null;for(const {i:si,rank} of list){const st=state.staff[si];for(const d of allowedDays){if(!st.work[d]){if(rank<2)reasons.add(`${st.name}が${DAYS[d]}に出勤していない`);continue;}const r=getRoute(si,d);const base=schedule(r,si,d);const baseCost=routeCost(base,si);for(let pos=0;pos<=r.length;pos++){const nr=r.slice();nr.splice(pos,0,{pid:p.id,locked:false});const tl=schedule(nr,si,d);if(!tl||tl.viol.length){if(tl&&rank<2)tl.viol.forEach(v=>reasons.add(v));continue;}const delta=routeCost(tl,si)-baseCost+(rank===1?S.secPen:rank===2?S.secPen*3:0)+spacingPen(p,d,except);if(!best||delta<best.delta)best={si,d,pos,delta};}}}return best;};let best=el.length?tryList(el):null;if(!best){if(!el.length)reasons.add('担当者がスタッフ表にいない');const others=state.staff.map((s,i)=>({i,rank:2})).filter(x=>!el.some(e=>e.i===x.i));best=tryList(others);if(!best&&!others.length)reasons.add('他のスタッフがいない');}return {best,reasons};}
+function plan(){const S=state.settings;const keep=$('#keepLocks').checked;const locked=[];for(const k in state.routes){for(const v of state.routes[k])if(keep&&v.locked)locked.push({k,v});}state.routes={};for(const {k,v} of locked){(state.routes[k]||(state.routes[k]=[])).push(v);}state.unassigned=[];const demands=[];for(const p of state.patients){if(p.lat==null){state.unassigned.push({pid:p.id,reason:'住所が地図に配置されていない'});continue;}const have=locked.filter(x=>x.v.pid===p.id).length;for(let k=have;k<p.count;k++)demands.push(p);}
+demands.sort((a,b)=>{const f=x=>(x.fixed!=null?0:1)*1000+(x.daysGiven&&x.days.length<=x.count?0:100)+eligibleStaff(x).length*10+(x.win?0:5)-x.dur/100;return f(a)-f(b);});
+const ALL=[0,1,2,3,4,5,6];for(const p of demands){let {best,reasons}=bestInsertion(p,null,p.days);let offDay=false;if(!best&&S.dayFallback&&p.days.length<7){const r2=bestInsertion(p,null,ALL.filter(d=>!p.days.includes(d)));if(r2.best){best=r2.best;offDay=true;}}if(best){getRoute(best.si,best.d).splice(best.pos,0,{pid:p.id,locked:false,offDay});}else{const rs=[...reasons];const cap=rs.length&&rs.every(x=>/終了|拘束/.test(x));state.unassigned.push({pid:p.id,reason:cap?'どのルートも時間が一杯（人数を増やすか訪問を減らす）':rs.slice(0,3).join(' / ')||'空き枠がない'});}}
+if($('#improve').checked)improvePlan(2500);}
+function totalCost(){let c=0;for(const k in state.routes){const [si,d]=k.split('|').map(Number);const r=state.routes[k];if(!r.length)continue;c+=routeCost(schedule(r,si,d),si);for(const v of r){const p=pById(v.pid);if(!p)continue;const el=eligibleStaff(p).find(e=>e.i===si);if(el&&el.rank)c+=state.settings.secPen;}}return c;}
+function improvePlan(budgetMs){const t0=performance.now();let improved=true,pass=0;while(improved&&pass<6&&performance.now()-t0<budgetMs){improved=false;pass++;const visits=[];for(const k in state.routes){const [si,d]=k.split('|').map(Number);state.routes[k].forEach((v,idx)=>{if(!v.locked)visits.push({si,d,v});});}visits.sort(()=>Math.random()-0.5);for(const {si,d,v} of visits){if(performance.now()-t0>budgetMs)break;const p=pById(v.pid);if(!p)continue;const r=getRoute(si,d);const idx=r.indexOf(v);if(idx<0)continue;const with_=routeCost(schedule(r,si,d),si);const without=r.filter(x=>x!==v);const withoutCost=routeCost(schedule(without,si,d),si);const el=eligibleStaff(p).find(e=>e.i===si);const removeGain=with_-withoutCost+(el?(el.rank?state.settings.secPen:0):state.settings.secPen*3)+spacingPen(p,d,v);r.splice(idx,1);const {best}=bestInsertion(p,v,v.offDay?[0,1,2,3,4,5,6]:p.days);if(best&&best.delta<removeGain-1){if(v.offDay&&p.days.includes(best.d))v.offDay=false;getRoute(best.si,best.d).splice(best.pos,0,v);improved=true;}else r.splice(idx,0,v);}for(const k in state.routes){const [si,d]=k.split('|').map(Number);twoOpt(si,d);}}}
+function twoOpt(si,d){const r=getRoute(si,d);if(r.length<3)return;let improved=true,guard=0;while(improved&&guard++<20){improved=false;let bestC=routeCost(schedule(r,si,d),si);for(let i=0;i<r.length-1;i++){for(let j=i+1;j<r.length;j++){if(r.slice(i,j+1).some(v=>v.locked))continue;const nr=r.slice(0,i).concat(r.slice(i,j+1).reverse(),r.slice(j+1));const c=routeCost(schedule(nr,si,d),si);if(c<bestC-0.5){r.splice(0,r.length,...nr);bestC=c;improved=true;}}}}}
+
+/* ========= ジオコーディング ========= */
+const OSAKA_WARDS=/^(北|都島|福島|此花|中央|西|港|大正|天王寺|浪速|西淀川|淀川|東淀川|東成|生野|旭|城東|鶴見|阿倍野|住之江|住吉|東住吉|平野|西成)区/;
+function normAddr(a){a=(a||'').trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[−–—ー―－]/g,'-').replace(/\s+/g,'');if(!a)return '';if(OSAKA_WARDS.test(a))a='大阪市'+a;if(!/^(北海道|東京都|京都府|大阪府|.{2,3}県)/.test(a))a='大阪府'+a;return a;}
+function addrVariants(a){const out=[a];const m=a.match(/^(.*?(?:[0-9]+(?:丁目|-)?)(?:[0-9]+(?:番|-)?)?(?:[0-9]+号?)?)(.*)$/);if(m&&m[2]){out.push(m[1].replace(/-$/,''));}let base=out[out.length-1];for(let k=0;k<2;k++){const mm=base.match(/^(.*?[0-9]+(?:-[0-9]+){2,})-[0-9]+(?:号|号室|階)?$/);if(!mm)break;base=mm[1];out.push(base);}return [...new Set(out)].filter(Boolean);}
+async function geocodeOne(addr){const a=normAddr(addr);if(!a)throw new Error('住所が空');if(!window.normalize){await new Promise(r=>{const t=setTimeout(r,15000);window.addEventListener('nja-ready',()=>{clearTimeout(t);r();},{once:true});});}if(!window.normalize)throw new Error('住所変換ライブラリが読み込めません');let best=null;for(const v of addrVariants(a)){let r=null;try{r=await normalize.normalize(v,{level:8});}catch(e){continue;}if(!(r&&r.point&&r.level>=3))continue;const g={lat:r.point.lat,lng:r.point.lng,level:r.level,pointLevel:r.point.level};if(g.pointLevel>=8)return g;if(!best||g.pointLevel>best.pointLevel)best=g;}if(best)return best;throw new Error('町名が見つからない');}
+async function geocodeAll(){const S=state.settings;const btn=$('#btnGeocode');btn.disabled=true;const targets=state.patients.filter(p=>!p.manual&&(p.lat==null||p.level<8));const byAddr=new Map();for(const p of targets){const k=normAddr(p.addr);if(!byAddr.has(k))byAddr.set(k,[]);byAddr.get(k).push(p);}let n=0,ok=0;for(const [k,ps] of byAddr){n++;$('#geoStatus').textContent=`配置中 ${n}/${byAddr.size}`;try{const g=await geocodeOne(k);for(const p of ps){p.lat=g.lat;p.lng=g.lng;p.level=g.pointLevel>=8?8:Math.min(g.level,3);}ok++;}catch(e){for(const p of ps){if(p.lat==null){p.level=0;}}}renderPatients();}$('#geoStatus').textContent=`配置 ${ok}/${byAddr.size} 件`;btn.disabled=false;save();renderPatMap(true);}
+async function gsiOne(addr){const a=normAddr(addr);const res=await fetch('https:\/\/msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(a));const j=await res.json();if(!j.length)throw new Error('該当なし');const [lng,lat]=j[0].geometry.coordinates;return {lat,lng,title:j[0].properties.title};}
+async function gsiAll(){const fails=state.patients.filter(p=>p.lat==null||p.level<3);if(!fails.length){toast('見つからない住所はありません');return;}if(!confirm(`${fails.length}件の住所を国土地理院のサーバーに送って検索します（氏名は送りません）。よろしいですか？`))return;let ok=0;for(const p of fails){try{const g=await gsiOne(p.addr);p.lat=g.lat;p.lng=g.lng;p.level=3;ok++;}catch(e){}}toast(`${ok}/${fails.length}件を配置`);save();renderPatients();renderPatMap(true);}
+
+/* ========= 保存 ========= */
+const GAS=window.GAS_CFG||null;
+// 手元の版・GASの画面だけで使う既定値。公開する版（GitHub Pages）ではビルド時に空にし、GAS（合言葉付き）から受け取る
+const LOCAL_DEF={};
+const BR=(GAS&&GAS.cfg)||{};              // 支店ごとの設定（GASから）。無ければ本店の既定値
+const BRANCH=(GAS&&GAS.branch)||'honten';
+const BR_LABEL=BR.label||'本店';
+const LS_KEY='vrt_'+(BRANCH==='honten'?'honten':BRANCH);
+let syncTimer=null,syncBusy=false,syncDirty=false;
+function setSync(t){const e=$('#syncStatus');if(e)e.textContent=t;}
+function gasCall(fn,...args){if(GAS&&GAS.api){return fetch(GAS.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GAS.token,fn,args,branch:BRANCH})}).then(r=>{if(!r.ok)throw new Error('通信エラー '+r.status);return r.json();}).then(j=>{if(!j||!j.ok)throw new Error((j&&j.error)||'読み取りに失敗');return j.result;});}return new Promise((res,rej)=>{if(window.google&&google.script&&google.script.run){google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(e instanceof Error?e:new Error(String(e&&e.message||e))))[fn](...args);}else rej(new Error('GAS接続なし'));});}
+function adoptState(o){state=o;state.settings={...DEFAULT_SETTINGS,...(o.settings||{})};state.routes=o.routes||{};state.unassigned=o.unassigned||[];if(GAS){state.settings.gasUrl=GAS.url;state.settings.gasToken=GAS.token;}}
+async function sharedLoad(){if(!GAS)return false;setSync('共有データ読み込み中…');try{const j=await gasCall('getState',BRANCH);if(j){const o=JSON.parse(j);if(o&&o.patients){adoptState(o);setSync('共有データ '+(o.updatedAt?'('+o.updatedAt+' 保存)':''));return true;}}setSync('共有データなし（この画面の内容が最初の共有データになります）');}catch(e){setSync('共有データの読み込みに失敗: '+e.message);}return false;}
+function sharedSave(){if(!GAS)return;syncDirty=true;clearTimeout(syncTimer);setSync('未保存の変更あり…');syncTimer=setTimeout(async()=>{if(syncBusy){return;}syncBusy=true;syncDirty=false;try{const now=new Date();state.updatedAt=`${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;state.updatedBy=GAS.user||'';await gasCall('putState',JSON.stringify(state),BRANCH);setSync('共有保存 ✓ '+state.updatedAt);}catch(e){setSync('共有保存に失敗: '+e.message);syncDirty=true;}syncBusy=false;if(syncDirty)sharedSave();},1500);}
+function save(){try{if($('#autosave').checked)localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}sharedSave();}
+function load(){try{const s=localStorage.getItem(LS_KEY);if(s){const o=JSON.parse(s);if(o&&o.patients){state=o;state.settings={...DEFAULT_SETTINGS,...(o.settings||{})};state.routes=o.routes||{};state.unassigned=o.unassigned||[];return true;}}}catch(e){}return false;}
+function downloadJSON(){const blob=new Blob([JSON.stringify(state,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);const d=new Date();a.download=`訪問ルート_本店_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+
+/* ========= 描画: 利用者 ========= */
+function renderPatients(){const tb=$('#patTable tbody');tb.innerHTML='';state.patients.forEach((p,i)=>{const tr=document.createElement('tr');const lv=p.manual?'<span class="pill info">手動</span>':p.level>=8?'<span class="pill ok">番地</span>':p.level>=3?'<span class="pill warn">町丁目</span>':'<span class="pill crit">未</span>';tr.innerHTML=`<td class="pick" title="地図でこの人の位置を表示">${i+1}</td><td><input type="text" data-k="name" value="${esc(p.name)}" style="min-width:70px"></td><td><input type="text" data-k="addr" class="w" value="${esc(p.addr)}" style="min-width:180px"></td><td><input type="number" class="n" data-k="dur" value="${p.dur}"></td><td><input type="text" data-k="days" value="${esc(daysText(p))}" style="min-width:60px"></td><td><input type="text" data-k="win" value="${esc(winText(p))}" style="min-width:90px"></td><td><input type="number" class="n" data-k="count" value="${p.count}"></td><td><input type="text" data-k="fixed" value="${p.fixed!=null?hm(p.fixed):''}" style="min-width:50px;width:56px"></td><td><input type="text" data-k="note" value="${esc(p.note||'')}" style="min-width:120px"></td><td>${lv}</td><td><button class="small" data-del="${p.id}" title="削除">×</button></td>`;tr.dataset.id=p.id;if(p.id===patSel)tr.classList.add('sel');tb.appendChild(tr);});$('#bPat').textContent=state.patients.length;patApplySearch();}
+function daysText(p){if(!p.daysGiven&&p.days.length===7)return '';if(p.days.length===7)return '毎日';if(p.days.join()==='1,2,3,4,5')return '平日';return p.days.map(d=>DAYS[d]).join(',');}
+function winText(p){if(!p.win)return '';const S=state.settings;if(p.win[0]<=S.dayStart&&p.win[1]===720)return '午前';if(p.win[0]===780&&p.win[1]>=S.dayEnd)return '午後';if(p.win[1]>=S.dayEnd)return hm(p.win[0])+'以降';if(p.win[0]<=S.dayStart)return hm(p.win[1])+'まで';return `${hm(p.win[0])}-${hm(p.win[1])}`;}
+$('#patTable').addEventListener('change',e=>{const tr=e.target.closest('tr');if(!tr)return;const p=pById(tr.dataset.id);if(!p)return;const k=e.target.dataset.k,v=e.target.value;if(k==='name')p.name=v.trim();else if(k==='addr'){if(v.trim()!==p.addr){p.addr=v.trim();p.lat=null;p.level=0;p.manual=false;}}else if(k==='dur')p.dur=parseInt(v)||60;else if(k==='days'){p.days=parseDays(v);p.daysGiven=!!v.trim();}else if(k==='win')p.win=parseWin(v,state.settings);else if(k==='count')p.count=v.trim()==='0'?0:Math.max(1,parseInt(v)||1);else if(k==='fixed'){p.fixed=parseHM(v);if(p.fixed!=null)p.win=null;}else if(k==='note')p.note=v.trim();save();renderPatients();renderPatMap(false);});
+$('#patTable').addEventListener('focusin',e=>{if(!e.target.matches('input[data-k="name"]'))return;const tr=e.target.closest('tr');if(tr)patHighlight(tr.dataset.id);});
+$('#patTable').addEventListener('click',e=>{const pk=e.target.closest('td.pick');if(pk){patHighlight(pk.closest('tr').dataset.id);return;}if(e.target.matches('input[data-k="name"]')){const tr=e.target.closest('tr');if(tr&&tr.dataset.id!==patSel)patHighlight(tr.dataset.id);}});
+$('#patSearch').addEventListener('input',()=>{const n=patApplySearch();if(n===1){const tr=$('#patTable tbody tr:not(.nohit)');if(tr)patHighlight(tr.dataset.id,{scroll:true});}});
+$('#patSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const tr=$('#patTable tbody tr:not(.nohit)');if(tr)patHighlight(tr.dataset.id,{scroll:true});}else if(e.key==='Escape'){e.target.value='';patApplySearch();}});
+$('#patTable').addEventListener('click',e=>{const id=e.target.dataset.del;if(!id)return;state.patients=state.patients.filter(p=>p.id!==id);for(const k in state.routes)state.routes[k]=state.routes[k].filter(v=>v.pid!==id);save();renderAll();});
+
+/* ========= 地図 ========= */
+let mapPat,mapRoute,patLayer,routeLayer,mapWeekly,weeklyLayer;
+const GSI='https:\/\/cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png';
+const ATTR='<a href="https:\/\/maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>';
+function mkMap(id){const m=L.map(id,{center:[34.62,135.53],zoom:13,minZoom:9,maxZoom:18});L.tileLayer(GSI,{attribution:ATTR,maxZoom:18}).addTo(m);L.control.scale({imperial:false,metric:true}).addTo(m);const row=document.querySelector(`.zoomrow[data-map="${id}"]`);if(row){const lid='zl_'+id;row.innerHTML=`<span class="zt">−</span><input type="range" min="9" max="18" step="1" value="13" list="${lid}" title="地図の拡大・縮小"><datalist id="${lid}">${[...Array(10)].map((_,i)=>`<option value="${9+i}"></option>`).join('')}</datalist><span class="zt">＋</span>`;const r=row.querySelector('input');r.addEventListener('input',()=>m.setZoom(+r.value));m.on('zoomend',()=>{r.value=m.getZoom();});}return m;}
+function pinColor(p){return p.manual?'#0b6bcb':p.level>=8?'#2e7d4f':p.level>=3?'#c8641a':'#b3261e';}
+let patSel=null,patMarkers=new Map();
+function patNorm(t){return wKanji(String(t||'').replace(/[\s　]/g,'')).toLowerCase();}
+function patApplySearch(){const q=patNorm(($('#patSearch')||{}).value||'');let n=0;$$('#patTable tbody tr').forEach(tr=>{const p=pById(tr.dataset.id);const hit=!q||(p&&(patNorm(p.name).includes(q)||patNorm(p.addr).includes(q)||patNorm(p.note).includes(q)));tr.classList.toggle('nohit',!hit);if(hit)n++;});const c=$('#patSearchCount');if(c)c.textContent=q?`${n}件`:'';return n;}
+function patHighlight(id,opt={}){const prev=patMarkers.get(patSel);if(prev){prev.circle.setStyle({radius:patRadius(),color:'#fff',weight:2});try{prev.circle.closeTooltip();}catch(e){}}patSel=id;$$('#patTable tr.sel').forEach(x=>x.classList.remove('sel'));const tr=$(`#patTable tr[data-id="${id}"]`);if(tr){tr.classList.add('sel');if(opt.scroll)tr.scrollIntoView({block:'nearest'});}const p=pById(id);if(!p)return;if(p.lat==null){if(opt.pan!==false)toast(`${p.name} は住所がまだ地図に配置されていません`);return;}const m=patMarkers.get(id);if(!m)return;m.circle.setStyle({radius:patRadius()+5,color:'#ffd600',weight:5});m.circle.bringToFront();m.drag.setZIndexOffset(1000);if(opt.pan!==false){mapPat.panTo(m.circle.getLatLng());}try{m.circle.openTooltip();}catch(e){}}
+function pinScale(z){return z<=10?0.6:z===11?0.7:z===12?0.82:z===13?0.92:1;}
+function patRadius(){return mapPat?Math.round(8*pinScale(mapPat.getZoom())):8;}
+function applyPinScale(){try{if(mapWeekly)document.getElementById('mapWeekly').style.setProperty('--pin',pinScale(mapWeekly.getZoom()));}catch(e){}try{if(mapPat){const r=patRadius();patMarkers.forEach((m,id)=>{m.circle.setRadius(id===patSel?r+5:r);});}}catch(e){}}
+function renderPatMap(fit){if(!mapPat)return;patLayer.clearLayers();patMarkers=new Map();const pts=[];const seen=new Map();for(const p of state.patients){if(p.lat==null)continue;const k=`${p.lat.toFixed(5)},${p.lng.toFixed(5)}`;const off=seen.get(k)||0;seen.set(k,off+1);const lat=p.lat+off*0.00006,lng=p.lng+off*0.00008;const m=L.circleMarker([lat,lng],{radius:patRadius(),color:'#fff',weight:2,fillColor:pinColor(p),fillOpacity:.95});m.bindTooltip(`${p.name}<br><span style="font-size:11px">${esc(p.addr)}</span>`,{direction:'top'});m.addTo(patLayer);pts.push([lat,lng]);const drag=L.marker([lat,lng],{draggable:true,opacity:0,icon:L.divIcon({className:'',html:'<div style="width:22px;height:22px"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(patLayer);patMarkers.set(p.id,{circle:m,drag});drag.on('click',()=>patHighlight(p.id,{pan:false,scroll:true}));m.on('click',()=>patHighlight(p.id,{pan:false,scroll:true}));drag.on('dragend',ev=>{const ll=ev.target.getLatLng();const same=state.patients.filter(q=>normAddr(q.addr)===normAddr(p.addr));for(const q of same){q.lat=ll.lat;q.lng=ll.lng;q.manual=true;q.level=8;}save();renderPatients();renderPatMap(false);toast(`${p.name} の位置を更新`);});}const o=office();wEnsurePlaces();const plm=placeMarkers(patLayer);if(!plm.has('office')&&o){L.marker([o.lat,o.lng],{icon:houseIcon('本','#0b1f4d',true),zIndexOffset:900}).bindTooltip('事務所',{direction:'top'}).addTo(patLayer);}if(fit&&pts.length)mapPat.fitBounds(pts,{padding:[30,30],maxZoom:15});if(patSel&&patMarkers.has(patSel))patHighlight(patSel,{pan:false});}
+
+/* ========= スタッフ ========= */
+function renderStaff(){const tb=$('#staffTable tbody');tb.innerHTML='';state.staff.forEach((st,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input type="text" data-k="name" value="${esc(st.name)}" style="min-width:70px"></td>`+DAYS.map((d,di)=>`<td style="text-align:center"><input type="checkbox" data-d="${di}" ${st.work[di]?'checked':''}></td>`).join('')+`<td><input type="text" data-k="win" value="${esc(st.winText||'')}" placeholder="9:00-18:00" style="min-width:100px"></td><td><button class="small" data-del="${st.id}">×</button></td>`;tr.dataset.id=st.id;tb.appendChild(tr);});$('#bStaff').textContent=state.staff.length;fillRouteSelectors();}
+$('#staffTable').addEventListener('change',e=>{const tr=e.target.closest('tr');if(!tr)return;const st=state.staff.find(s=>s.id===tr.dataset.id);if(!st)return;if(e.target.dataset.d!=null)st.work[+e.target.dataset.d]=e.target.checked;else if(e.target.dataset.k==='name')st.name=e.target.value.trim();else if(e.target.dataset.k==='win')st.winText=e.target.value.trim();save();fillRouteSelectors();});
+$('#staffTable').addEventListener('click',e=>{const id=e.target.dataset.del;if(!id)return;const idx=state.staff.findIndex(s=>s.id===id);if(idx<0)return;state.staff.splice(idx,1);const nr={};for(const k in state.routes){const [si,d]=k.split('|').map(Number);if(si===idx)continue;nr[key(si>idx?si-1:si,d)]=state.routes[k];}state.routes=nr;save();renderAll();});
+
+/* ========= 設定 ========= */
+function renderSettings(){const S=state.settings;$('#sWeekStart').value=S.weekStart||'';$('#sOfficeAddr').value=S.officeAddr;$('#sMondayStart').value=hm(S.mondayStart);$('#sDefStart').value=hm(S.defStart);$('#sDefEnd').value=hm(S.defEnd);$('#sMaxSpan').value=S.maxSpan;$('#sBreakS').value=hm(S.breakS);$('#sBreakE').value=hm(S.breakE);$('#sBreakMin').value=S.breakMin;$('#sSpeed').value=S.speed;$('#sFactor').value=S.factor;$('#sParking').value=S.parking;$('#sGrid').value=String(S.grid);$('#sLatePen').value=S.latePen;$('#sSecPen').value=S.secPen;$('#sStrictWin').value=S.strictWin?'1':'0';$('#sDayFallback').value=S.dayFallback===false?'0':'1';$('#sGasUrl').value=S.gasUrl||'';$('#sGasToken').value=S.gasToken||'';$('#officeGeo').textContent=S.officeLat!=null?`配置済み (${S.officeLat.toFixed(4)}, ${S.officeLng.toFixed(4)})`:'未配置';renderWeekLabel();}
+function readSettings(){const S=state.settings;const t=(id,def)=>{const v=parseHM($(id).value);return v==null?def:v;};S.weekStart=$('#sWeekStart').value;if($('#sOfficeAddr').value.trim()!==S.officeAddr){S.officeAddr=$('#sOfficeAddr').value.trim();S.officeLat=null;S.officeLng=null;}S.mondayStart=t('#sMondayStart',S.mondayStart);S.defStart=t('#sDefStart',S.defStart);S.defEnd=t('#sDefEnd',S.defEnd);S.maxSpan=+$('#sMaxSpan').value||540;S.breakS=t('#sBreakS',S.breakS);S.breakE=t('#sBreakE',S.breakE);S.breakMin=+$('#sBreakMin').value||60;S.speed=+$('#sSpeed').value||20;S.factor=+$('#sFactor').value||1.3;S.parking=+$('#sParking').value||0;S.grid=+$('#sGrid').value||30;S.latePen=+$('#sLatePen').value||0;S.secPen=+$('#sSecPen').value||0;S.strictWin=$('#sStrictWin').value==='1';S.dayFallback=$('#sDayFallback').value==='1';S.gasUrl=$('#sGasUrl').value.trim();S.gasToken=$('#sGasToken').value.trim();save();renderSettings();toast('設定を反映しました');}
+function renderWeekLabel(){const S=state.settings;$('#weekLabel').textContent=S.weekStart?`週の開始日 ${dayLabel(0)}〜${dayLabel(6)}`:'週の開始日 未設定（③設定）';}
+function dayLabel(d){const S=state.settings;if(!S.weekStart)return DAYS[d];const dt=new Date(S.weekStart+'T00:00:00');dt.setDate(dt.getDate()+d);return `${dt.getMonth()+1}/${dt.getDate()}(${DAYS[dt.getDay()]})`;}
+async function geoOffice(){const S=state.settings;S.officeAddr=$('#sOfficeAddr').value.trim();try{const g=await geocodeOne(S.officeAddr);S.officeLat=g.lat;S.officeLng=g.lng;toast(g.pointLevel>=8?'事務所を配置しました':'事務所は町丁目の位置です（要確認）');}catch(e){toast('事務所の住所が見つかりません');}save();renderSettings();renderPatMap(false);}
+
+/* ========= 作成タブ ========= */
+function renderPlan(){const S=state.settings;let visits=0,travelMin=0,km=0,warns=[];const rows=[];for(const k in state.routes){const [si,d]=k.split('|').map(Number);const r=state.routes[k];if(!r.length)continue;const tl=schedule(r,si,d);const st=state.staff[si];if(!st)continue;visits+=r.length;travelMin+=tl.travelMin;km+=tl.km;for(const v of tl.viol)warns.push({lv:'crit',t:`${st.name} ${DAYS[d]}: ${v}`,si,d});for(const v of tl.warn)warns.push({lv:'warn',t:`${st.name} ${DAYS[d]}: ${v}`,si,d});for(const v of r){const p=pById(v.pid);if(!p)continue;const el=eligibleStaff(p).find(e=>e.i===si);if(v.offDay)warns.push({lv:'warn',t:`${st.name} ${DAYS[d]}: ${p.name} は指定曜日（${daysText(p)}）に入らず${DAYS[d]}に割当`,si,d});}}
+const demand=state.patients.reduce((a,p)=>a+p.count,0);$('#planStats').innerHTML=`<div class="stat"><b>${visits}<span style="font-size:12px">/${demand}</span></b><span>割当済み訪問</span></div><div class="stat"><b>${state.unassigned.length}</b><span>未割当</span></div><div class="stat"><b>${Math.round(travelMin)}</b><span>移動 合計(分)</span></div><div class="stat"><b>${km.toFixed(1)}</b><span>道のり 合計(km)</span></div><div class="stat"><b>${warns.filter(w=>w.lv==='crit').length}</b><span>要修正</span></div>`;
+const ut=$('#unassignedTable tbody');ut.innerHTML='';for(const u of state.unassigned){const p=pById(u.pid);if(!p)continue;const tr=document.createElement('tr');tr.innerHTML=`<td>${esc(p.name)}</td><td class="muted">${esc([daysText(p),winText(p),p.fixed!=null?'固定'+hm(p.fixed):'',p.dur+'分',p.note||''].filter(Boolean).join(' '))}</td><td>${esc(u.reason)}</td>`;ut.appendChild(tr);}
+const wl=$('#warnList');wl.innerHTML='';if(!warns.length)wl.innerHTML='<li class="muted">警告はありません</li>';for(const w of warns){const li=document.createElement('li');li.innerHTML=`<span class="pill ${w.lv}">${w.lv==='crit'?'要修正':'注意'}</span> <a href="#" data-si="${w.si}" data-d="${w.d}">${esc(w.t)}</a>`;wl.appendChild(li);}
+const lt=$('#loadTable');let h='<thead><tr><th>'+(state.settings.anonMode?'ルート':'スタッフ')+'</th>'+DAYS.map((d,i)=>`<th>${dayLabel(i)}</th>`).join('')+'<th>週計</th></tr></thead><tbody>';state.staff.forEach((st,si)=>{let tot=0;h+=`<tr><td><b>${esc(st.name)}</b></td>`;for(let d=0;d<7;d++){const r=state.routes[key(si,d)]||[];tot+=r.length;if(!st.work[d]&&!r.length){h+='<td class="muted" style="text-align:center">—</td>';continue;}const tl=r.length?schedule(r,si,d):null;const cls=tl&&tl.viol.length?'crit':tl&&tl.warn.length?'warn':'';h+=`<td style="text-align:center"><a href="#" data-si="${si}" data-d="${d}" class="pill ${cls||'info'}">${r.length}件${tl?` ${hm(tl.first)}-${hm(tl.last)}`:''}</a></td>`;}h+=`<td style="text-align:center"><b>${tot}</b></td></tr>`;});lt.innerHTML=h+'</tbody>';}
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-si]');if(!a)return;e.preventDefault();$('#rStaff').value=a.dataset.si;$('#rDay').value=a.dataset.d;showTab('route');});
+
+/* ========= ルートタブ ========= */
+const PALETTE=['#1565c0','#ff8c00','#2e7d32','#b71c1c','#6a1b9a','#00acc1','#ff7f00','#ad1457','#5d4037','#455a64','#7cb342','#3949ab','#00897b','#8e24aa','#6d4c41','#9e9d24'];
+function fillRouteSelectors(){const rs=$('#rStaff'),rd=$('#rDay');const ps=rs.value,pd=rd.value;rs.innerHTML=state.staff.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('');rd.innerHTML=DAYS.map((d,i)=>`<option value="${i}">${dayLabel(i)}</option>`).join('');if(ps!==''&&state.staff[+ps])rs.value=ps;if(pd!=='')rd.value=pd;}
+function curSel(){return {si:+$('#rStaff').value||0,d:+$('#rDay').value||0};}
+function renderRoute(){const {si,d}=curSel();const st=state.staff[si];const ol=$('#stops');ol.innerHTML='';if(!st){$('#rStats').innerHTML='';return;}const r=getRoute(si,d);const tl=schedule(r,si,d);const S=state.settings;const [ws,we]=staffWin(st,S);
+$('#rStats').innerHTML=r.length?`<div class="stat"><b>${r.length}</b><span>件</span></div><div class="stat"><b>${hm(tl.first)}–${hm(tl.last)}</b><span>開始〜終了（${(tl.span/60).toFixed(1)}h）</span></div><div class="stat"><b>${Math.round(tl.travelMin)}</b><span>移動 合計(分)</span></div><div class="stat"><b>${tl.km.toFixed(1)}</b><span>道のり(km)</span></div><div class="stat"><b>${tl.brk?hm(tl.brk[0])+'–'+hm(tl.brk[1]):'—'}</b><span>休憩</span></div>`:`<div class="muted">${st.work[d]?'訪問がありません':'この日は出勤していません（②で変更可）'}</div>`;
+let prevEnd=null;r.forEach((v,i)=>{const p=pById(v.pid);const s=tl.stops[i];if(!p||!s)return;if(tl.brk&&prevEnd!=null&&tl.brk[0]>=prevEnd-0.01&&tl.brk[1]<=s.start+0.01){const b=document.createElement('li');b.className='travel';b.textContent=`休憩 ${hm(tl.brk[0])}–${hm(tl.brk[1])}`;ol.appendChild(b);}const tr=document.createElement('li');tr.className='travel';tr.textContent=(i===0&&d===1&&office())?`事務所から ${Math.round(s.travel)}分`:i===0?'':`移動 ${Math.round(s.travel)}分${s.km!=null?`（${s.km.toFixed(1)}km）`:''}`;if(tr.textContent)ol.appendChild(tr);const li=document.createElement('li');li.className='stop'+(v.locked?' locked':'')+(tl.viol.some(x=>x.startsWith(p.name))?' bad':'');li.draggable=!v.locked;li.dataset.idx=i;const el=eligibleStaff(p).find(e=>e.i===si);li.innerHTML=`<div class="num">${i+1}</div><div><div class="who">${esc(p.name)} <span class="muted" style="font-weight:400">${p.dur}分${p.win?' '+esc(winText(p)):''}${p.fixed!=null?' 固定'+hm(p.fixed):''}${v.offDay?' <span class="pill warn">曜日外</span>':''}</div><div class="time">${hm(s.start)}–${hm(s.end)}${s.slack>=15?` <span class="muted">（待ち${Math.round(s.slack)}分）</span>`:''}</div></div><div class="ctl"><button class="small" data-act="up" title="上へ">↑</button><button class="small" data-act="down" title="下へ">↓</button><button class="small" data-act="lock" title="固定">${v.locked?'🔒':'🔓'}</button><select class="small" data-act="move" title="別のルートへ"><option value="">移動…</option>${moveOptions(si,d)}</select><button class="small" data-act="del" title="このルートから外す">×</button></div>`;ol.appendChild(li);prevEnd=s.end;});
+if(tl.brk&&r.length&&prevEnd!=null&&tl.brk[0]>=prevEnd-0.01){const b=document.createElement('li');b.className='travel';b.textContent=`休憩 ${hm(tl.brk[0])}–${hm(tl.brk[1])}`;ol.appendChild(b);}
+const w=$('#rWarn');w.innerHTML=[...tl.viol.map(x=>`<div><span class="pill crit">要修正</span> ${esc(x)}</div>`),...tl.warn.map(x=>`<div><span class="pill warn">注意</span> ${esc(x)}</div>`)].join('');
+const add=$('#rAdd');const opts=[];const placed=new Map();for(const k in state.routes){const [a,b]=k.split('|').map(Number);for(const v of state.routes[k]){placed.set(v.pid,(placed.get(v.pid)||[]).concat([[a,b]]));}}for(const u of state.unassigned){const p=pById(u.pid);if(p)opts.push(`<option value="u:${p.id}">未割当: ${esc(p.name)}（${esc(daysText(p)||'曜日自由')} ${esc(winText(p))}）</option>`);}for(const k in state.routes){const [a,b]=k.split('|').map(Number);if(a===si&&b===d)continue;for(const v of state.routes[k]){const p=pById(v.pid);const s2=state.staff[a];if(p&&s2)opts.push(`<option value="r:${k}:${v.pid}">${esc(p.name)}（今: ${esc(s2.name)} ${DAYS[b]}）</option>`);}}for(const p of state.patients){if(!placed.has(p.id)&&!state.unassigned.some(u=>u.pid===p.id))opts.push(`<option value="u:${p.id}">未使用: ${esc(p.name)}</option>`);}add.innerHTML='<option value="">追加する利用者を選ぶ…</option>'+opts.join('');
+renderRouteMap();}
+function moveOptions(si,d){let h='';state.staff.forEach((s,i)=>{for(let dd=0;dd<7;dd++){if(i===si&&dd===d)continue;if(!s.work[dd])continue;h+=`<option value="${i}|${dd}">${esc(s.name)} ${DAYS[dd]}</option>`;}});return h;}
+$('#stops').addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const li=b.closest('.stop');const i=+li.dataset.idx;const {si,d}=curSel();const r=getRoute(si,d);const act=b.dataset.act;if(act==='up'&&i>0){[r[i-1],r[i]]=[r[i],r[i-1]];}else if(act==='down'&&i<r.length-1){[r[i+1],r[i]]=[r[i],r[i+1]];}else if(act==='lock'){r[i].locked=!r[i].locked;}else if(act==='del'){const v=r.splice(i,1)[0];state.unassigned.push({pid:v.pid,reason:'手動で外した'});}save();renderRoute();});
+$('#stops').addEventListener('change',e=>{const s=e.target.closest('select[data-act="move"]');if(!s||!s.value)return;const li=s.closest('.stop');const i=+li.dataset.idx;const {si,d}=curSel();const r=getRoute(si,d);const v=r.splice(i,1)[0];const [a,b]=s.value.split('|').map(Number);const p=pById(v.pid);const nr=getRoute(a,b);let bestPos=nr.length,bestC=Infinity;for(let pos=0;pos<=nr.length;pos++){const t=nr.slice();t.splice(pos,0,v);const c=routeCost(schedule(t,a,b),a);if(c<bestC){bestC=c;bestPos=pos;}}nr.splice(bestPos,0,v);save();toast(`${p?p.name:''} を ${state.staff[a].name} ${DAYS[b]} へ移動`);renderRoute();});
+let dragIdx=null;$('#stops').addEventListener('dragstart',e=>{const li=e.target.closest('.stop');if(!li)return;dragIdx=+li.dataset.idx;e.dataTransfer.effectAllowed='move';});$('#stops').addEventListener('dragover',e=>{const li=e.target.closest('.stop');if(!li)return;e.preventDefault();$$('.stop.dragover').forEach(x=>x.classList.remove('dragover'));li.classList.add('dragover');});$('#stops').addEventListener('dragleave',e=>{const li=e.target.closest('.stop');if(li)li.classList.remove('dragover');});$('#stops').addEventListener('drop',e=>{const li=e.target.closest('.stop');if(!li||dragIdx==null)return;e.preventDefault();const to=+li.dataset.idx;const {si,d}=curSel();const r=getRoute(si,d);if(r[to]&&r[to].locked&&to!==dragIdx){toast('固定した訪問の位置には置けません');dragIdx=null;renderRoute();return;}const v=r.splice(dragIdx,1)[0];r.splice(to,0,v);dragIdx=null;save();renderRoute();});
+$('#btnAddStop').addEventListener('click',()=>{const val=$('#rAdd').value;if(!val)return;const {si,d}=curSel();const st=state.staff[si];if(!st)return;let v;if(val.startsWith('u:')){const pid=val.slice(2);state.unassigned=state.unassigned.filter(u=>u.pid!==pid);v={pid,locked:false};}else{const [,k,pid]=val.split(':');const src=state.routes[k];const idx=src.findIndex(x=>x.pid===pid);v=src.splice(idx,1)[0];}const r=getRoute(si,d);let bestPos=r.length,bestC=Infinity;for(let pos=0;pos<=r.length;pos++){const t=r.slice();t.splice(pos,0,v);const c=routeCost(schedule(t,si,d),si);if(c<bestC){bestC=c;bestPos=pos;}}r.splice(bestPos,0,v);save();renderRoute();});
+$('#btnOptRoute').addEventListener('click',()=>{const {si,d}=curSel();twoOpt(si,d);save();renderRoute();toast('順番を最適化しました');});
+function renderRouteMap(){if(!mapRoute)return;routeLayer.clearLayers();const {si,d}=curSel();const all=$('#rAll').checked;const pts=[];const list=all?state.staff.map((s,i)=>i):[si];$('#rLegend').innerHTML=all?list.filter(i=>getRoute(i,d).length).map(i=>`<span><i style="background:${PALETTE[i%PALETTE.length]}"></i>${esc(state.staff[i].name)}</span>`).join(''):'';const o=office();if(d===1&&o){L.marker([o.lat,o.lng],{icon:L.divIcon({className:'',html:'<div class="marker-office">事務所</div>',iconAnchor:[24,10]})}).addTo(routeLayer);pts.push([o.lat,o.lng]);}for(const i of list){const r=getRoute(i,d);if(!r.length)continue;const col=PALETTE[i%PALETTE.length];const tl=schedule(r,i,d);const line=[];if(d===1&&o)line.push([o.lat,o.lng]);r.forEach((v,idx)=>{const p=pById(v.pid);if(!p||p.lat==null)return;line.push([p.lat,p.lng]);pts.push([p.lat,p.lng]);const s=tl.stops[idx];L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:`<div class="marker-num" style="background:${col}${v.locked?';border-color:#6b4ea8':''}">${idx+1}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).bindTooltip(`${esc(p.name)} ${s?hm(s.start)+'–'+hm(s.end):''}${all?'<br>'+esc(state.staff[i].name):''}`,{direction:'top'}).addTo(routeLayer);});if(line.length>1)L.polyline(line,{color:col,weight:all?3:4,opacity:.85,dashArray:all?null:null}).addTo(routeLayer);}if(pts.length)mapRoute.fitBounds(pts,{padding:[30,30],maxZoom:15});}
+$('#rStaff').addEventListener('change',renderRoute);$('#rDay').addEventListener('change',renderRoute);$('#rAll').addEventListener('change',renderRouteMap);
+
+/* ========= 週間表 ========= */
+const AM=[...Array(12)].map((_,i)=>420+i*30),PM=[...Array(15)].map((_,i)=>780+i*30);
+const SLOTS=AM.concat(PM);
+function renderGrid(){const area=$('#gridArea');let h='';for(let d=0;d<7;d++){const rows=state.staff.map((s,i)=>({s,i,r:getRoute(i,d)})).filter(x=>x.s.work[d]||x.r.length);if(!rows.length)continue;h+=`<div class="dayhead"><h3>${dayLabel(d)}</h3><span class="muted">${rows.reduce((a,x)=>a+x.r.length,0)}件</span><button class="small" data-copyday="${d}">この日をコピー</button></div><div class="gridwrap"><table class="week"><thead><tr><th class="name">スタッフ</th>${SLOTS.map(t=>`<th>${hm(t)}</th>`).join('')}</tr></thead><tbody>`;for(const {s,i,r} of rows){const tl=schedule(r,i,d);const cells=new Array(SLOTS.length).fill(null);const occ=new Array(SLOTS.length).fill(false);r.forEach((v,idx)=>{const st=tl.stops[idx];const p=pById(v.pid);if(!st||!p)return;const c=Math.floor((st.start-420)/30);const span=Math.max(1,Math.round(p.dur/30));if(c<0||c>=SLOTS.length)return;const bad=tl.viol.some(x=>x.startsWith(p.name));cells[c]={name:p.name,span:Math.min(span,SLOTS.length-c),cls:bad?'crit':'',lk:v.locked};for(let k=c;k<c+span&&k<SLOTS.length;k++)occ[k]=true;});const brk=tl.brk;h+=`<tr><td class="name">${esc(s.name)}</td>`;for(let c=0;c<SLOTS.length;c++){if(occ[c]&&!cells[c])continue;const t=SLOTS[c];if(cells[c]){const x=cells[c];h+=`<td class="v ${x.cls}${x.lk?' lk':''}" colspan="${x.span}" title="${esc(x.name)}">${esc(x.name)}</td>`;}else if(brk&&t>=brk[0]-0.01&&t<brk[1]-0.01)h+='<td class="brk"></td>';else h+='<td></td>';}h+='</tr>';}h+='</tbody></table></div>';}area.innerHTML=h||'<div class="muted">④で作成すると表示されます</div>';}
+function dayTSV(d){const lines=[];const S=state.settings;let dateStr=DAYS[d];if(S.weekStart){const dt=new Date(S.weekStart+'T00:00:00');dt.setDate(dt.getDate()+d);dateStr=`${dt.getDate()}日（${DAYS[dt.getDay()]}）`;}state.staff.forEach((s,i)=>{const r=getRoute(i,d);if(!r.length&&!s.work[d])return;const tl=schedule(r,i,d);const am=new Array(12).fill(''),pm=new Array(15).fill('');r.forEach((v,idx)=>{const st=tl.stops[idx];const p=pById(v.pid);if(!st||!p)return;const c=Math.floor((st.start-420)/30);if(c<0)return;if(c<12)am[c]=p.name;else if(c-12<15)pm[c-12]=p.name;});lines.push([dateStr,s.name,''].concat(am,[s.name],pm).join('\t'));});return lines.join('\n');}
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(msg);}}
+$('#gridArea').addEventListener('click',e=>{const b=e.target.closest('button[data-copyday]');if(!b)return;copyText(dayTSV(+b.dataset.copyday),`${dayLabel(+b.dataset.copyday)} をコピーしました`);});
+$('#btnCopyWeek').addEventListener('click',()=>{const parts=[];for(let d=0;d<7;d++){const t=dayTSV(d);if(t)parts.push(t);}copyText(parts.join('\n\n'),'1週間分をコピーしました');});
+$('#btnCopyList').addEventListener('click',()=>{const lines=['曜日\tスタッフ\t順\t開始\t終了\t利用者\t移動(分)\t備考'];for(let d=0;d<7;d++)state.staff.forEach((s,i)=>{const r=getRoute(i,d);if(!r.length)return;const tl=schedule(r,i,d);r.forEach((v,idx)=>{const st=tl.stops[idx];const p=pById(v.pid);if(!st||!p)return;lines.push([dayLabel(d),s.name,idx+1,hm(st.start),hm(st.end),p.name,Math.round(st.travel),v.locked?'固定':''].join('\t'));});});copyText(lines.join('\n'),'一覧をコピーしました');});
+
+/* ========= 週間シフト（実際の予定） ========= */
+const W_NOTE_RE=/朝会|面談|カンファ|MTG|講習|事務所|本社|頓服|納車|会議|コンサル|回収|けいかく|イオン|病院|往診|担当者|研修|確認|打ち合わせ|面接|交流会|全社|CM訪問|鍼灸|車点検|片づけ|メモ|勉強会|申請|報告|記録|シート|採血|同行|MCS|時短|入浴:|申し送り|申送|返信|準備|特指示|褥瘡|浣腸|契約|摘便/;
+const W_TOP_STAFF=BR.topStaff||LOCAL_DEF.topStaff||[]; // 読み込み時にこの順で先頭に並べる（他は週間シフトの順のまま）
+const W_HIDE_KUBUN=new RegExp(BR.hideKubun!=null?(BR.hideKubun||'(?!)'):'日常|早出|遅出|常駐');const W_NIGHT_KUBUN=/夜勤|明け/;const W_HIDE_NAMES=BR.excludeNames||LOCAL_DEF.excludeNames||[];
+// 本店: 外回り対象外の名前＝リハ（PT・事務）、区分（日常・早出・遅出・常駐）＝常駐。河内・南大阪: 外回り対象外の名前＝常駐（リハの指定なし）
+const W_REHAB_NAMES=BR.rehabNames||(BRANCH==='honten'?W_HIDE_NAMES:[]);
+const W_RES_NAMES=BR.residentNames||(BRANCH==='honten'?[]:W_HIDE_NAMES);
+function wIsRehab(r){return W_REHAB_NAMES.some(n=>String(r.staff||'').startsWith(n));}
+function wIsStationed(r){return !wIsRehab(r)&&(W_HIDE_KUBUN.test(r.kubun||'')||W_RES_NAMES.some(n=>String(r.staff||'').startsWith(n)));}
+function wHidden(r){if(W_NIGHT_KUBUN.test(r.kubun||''))return true;if(wIsRehab(r))return !$('#wShowRehab').checked;if(wIsStationed(r))return !$('#wShowRes').checked;return false;}
+const W_FAC=Object.assign({},LOCAL_DEF.facAlias||{},BR.facAlias||{});
+function wKey(t){return wKanji(String(t||'').split('\n')[0].replace(/[（(].*?[)）]|[A-Za-z①-⑩\d\s　♨️？?:：\/／〜~\-－]/g,'').replace(/(リハ|膀洗|処置|点滴|清拭|食介|交換|配薬|採血|入浴|様|さん)$/,''));}
+function wAlias(p){const m=String(p.note||'').match(/略称?[:：]\s*([^\s,、，/／]+)/);return m?m[1]:'';}
+function wKanji(n){return n.replace(/斎|斉|齊/g,'齋').replace(/崎/g,'﨑').replace(/沢/g,'澤').replace(/高/g,'髙').replace(/辺|邉/g,'邊').replace(/島/g,'嶋').replace(/圜/g,'圓').replace(/曉/g,'暁').replace(/国/g,'國').replace(/浜/g,'濱').replace(/黒/g,'黑').replace(/徳/g,'德');}
+function wMatch(text){const k=wKey(text);if(!k)return null;const norm=n=>wKanji(String(n||'').replace(/\s/g,''));const al=state.patients.find(p=>wAlias(p)&&norm(wAlias(p))===k);if(al)return al;if(W_FAC[k]){const f=state.patients.find(p=>p.name.startsWith(W_FAC[k]));if(f)return f;}const c=state.patients.filter(p=>norm(p.name).startsWith(k));if(c.length===1)return c[0];if(c.length>1){const exact=c.find(p=>norm(p.name)===k);if(exact)return exact;const same=new Set(c.map(p=>normAddr(p.addr)));if(same.size===1)return c[0];return {ambiguous:c};}return null;}
+function wMapPos(){let v='';try{v=localStorage.getItem('vrt_mappos')||'';}catch(e){}if(v==='right'||v==='below')return v;return window.innerWidth>=1600?'right':'below';}
+function wApplyMapPos(){const stack=document.querySelector('#tab-weekly .stack');if(!stack)return;const right=wMapPos()==='right';stack.classList.toggle('side',right);const b=$('#btnMapPos');if(b){b.textContent=right?'地図: 右に表示中':'地図: 下に表示中';b.classList.toggle('right',right);}if(right){const top=stack.getBoundingClientRect().top;stack.style.height=Math.max(420,window.innerHeight-top-14)+'px';let w=null;try{w=+localStorage.getItem('vrt_wside');}catch(e){}stack.style.setProperty('--wsplit',w?w+'px':'56%');}else{stack.style.height='';stack.style.removeProperty('--wsplit');}setTimeout(()=>{try{mapWeekly&&mapWeekly.invalidateSize();}catch(e){}},30);}
+function wSideBarInit(){const bar=$('#wSideBar'),stack=document.querySelector('#tab-weekly .stack');if(!bar||!stack)return;bar.addEventListener('pointerdown',e=>{e.preventDefault();bar.setPointerCapture(e.pointerId);bar.classList.add('active');const rect=stack.getBoundingClientRect();let w=null;const move=ev=>{w=Math.max(420,Math.min(rect.width-300,ev.clientX-rect.left-7));stack.style.setProperty('--wsplit',w+'px');try{mapWeekly&&mapWeekly.invalidateSize();}catch(x){}};const up=ev=>{bar.removeEventListener('pointermove',move);bar.removeEventListener('pointerup',up);bar.removeEventListener('pointercancel',up);try{bar.releasePointerCapture(ev.pointerId);}catch(x){}bar.classList.remove('active');if(w)try{localStorage.setItem('vrt_wside',String(Math.round(w)));}catch(x){}};bar.addEventListener('pointermove',move);bar.addEventListener('pointerup',up);bar.addEventListener('pointercancel',up);});bar.addEventListener('dblclick',()=>{try{localStorage.removeItem('vrt_wside');}catch(x){}wApplyMapPos();});$('#btnMapPos').addEventListener('click',()=>{const next=wMapPos()==='right'?'below':'right';try{localStorage.setItem('vrt_mappos',next);}catch(e){}wApplyMapPos();wFitTable();wFit('all');});window.addEventListener('resize',()=>{if(document.querySelector('#tab-weekly.active'))wApplyMapPos();});}
+function wFitTable(){const panel=document.querySelector('#tab-weekly .stack>.panel:first-child');if(!panel)return;if(wMapPos()==='right'){panel.style.height='';return;}panel.style.height='auto';const h=panel.getBoundingClientRect().height;panel.style.height=Math.max(110,Math.min(Math.round(h)+2,Math.round(window.innerHeight*0.8)))+'px';try{mapWeekly&&mapWeekly.invalidateSize();}catch(e){}}
+function wOrderRows(day){if(!day||day.ordered)return;day.rows=day.rows.map((r,i)=>({r,i,k:(()=>{const j=W_TOP_STAFF.findIndex(n=>String(r.staff||'').startsWith(n));return j<0?W_TOP_STAFF.length:j;})()})).sort((a,b)=>a.k-b.k||a.i-b.i).map(x=>x.r);day.ordered=true;}
+function wDefaultShow(day){if(!day||day.inited)return;day.rows.forEach(r=>{r.show=false;});day.inited=true;}
+function wSyncWeek(){const e=$('#wWeekStart');if(!e)return;let v=state.settings.weekStart||'';if(!v){const d=new Date();d.setDate(d.getDate()+((7-d.getDay())%7||7));v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');state.settings.weekStart=v;const sw=$('#sWeekStart');if(sw)sw.value=v;}e.value=v;}
+async function weeklyLoad(){const S=state.settings;const we=$('#wWeekStart');if(we&&we.value){const d=new Date(we.value+'T00:00:00');if(d.getDay()!==0){d.setDate(d.getDate()-d.getDay());we.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');toast('日曜に合わせました: '+we.value);}S.weekStart=we.value;const sw=$('#sWeekStart');if(sw)sw.value=we.value;save();}if(!S.gasUrl||!S.gasToken){toast('③設定にURLと合言葉を入れてください');showTab('settings');return;}if(!S.weekStart){toast('週の開始日（日曜）を入れてください');return;}const st=$('#weeklyStatus');st.textContent='読み込み中…';$('#btnWeeklyLoad').disabled=true;try{const d=await gasFetch(`${S.gasUrl}${S.gasUrl.includes('?')?'&':'?'}token=${encodeURIComponent(S.gasToken)}&start=${S.weekStart}&sheet=weekly`);if(!d||!d.ok)throw new Error(d&&d.error?d.error:'読み取りに失敗');for(const day of d.days)wOrderRows(day);state.weekly=d;state.weeklyOrig=JSON.parse(JSON.stringify(d));wSel=0;for(const day of d.days){day.rows.forEach((r,ri)=>{r.color=ri;});wDefaultShow(day);const f=day.rows.findIndex(r=>r.show);if(f>=0)wSel=f;}save();st.textContent=`読み込み完了: タブ「${d.tab}」`;renderWeekly();wFitTable();wFit('all');}catch(e){st.textContent='失敗: '+e.message;toast('読み込みに失敗しました');}$('#btnWeeklyLoad').disabled=false;}
+$('#btnWeeklyLoad').addEventListener('click',weeklyLoad);$('#wWeekStart').addEventListener('change',()=>{state.settings.weekStart=$('#wWeekStart').value;const sw=$('#sWeekStart');if(sw)sw.value=state.settings.weekStart;save();});
+function wDur(cell){const p=cell.p;return (p&&!p.ambiguous&&p.dur>=120)?p.dur:30;} // 週間シフト上は原則30分。施設巡回(120分)だけ例外
+const CN='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';const cnum=n=>n>=1&&n<=20?CN[n-1]:'('+n+')';
+function wHasChokai(row){return !!(row&&row.cells&&row.cells.some(c=>/朝会/.test(String(c.v||''))));}
+let wOfficeTried=false;
+function wEnsureOffice(){if(office()||wOfficeTried)return;const S=state.settings;if(!S.officeAddr)return;wOfficeTried=true;geocodeOne(S.officeAddr).then(g=>{S.officeLat=g.lat;S.officeLng=g.lng;save();renderWeekly();renderWeeklyMap();}).catch(()=>{});}
+const W_PLACES=BR.places||((LOCAL_DEF.places||{})[BRANCH])||[];
+// 未配置に並べるカード（地図の家型マークは W_PLACES 全部を常に表示）
+const W_PALETTE_HIDE=BR.paletteHide||[];
+const W_PALETTE=W_PLACES.filter(d=>!W_PALETTE_HIDE.includes(d.key));
+let wPlaceTried={};
+function wPlaceDef(key){return W_PLACES.find(x=>x.key===key)||null;}
+function wPlaceObj(key){const d=wPlaceDef(key);if(!d)return null;if(d.visit){const v=state.patients.find(p=>String(p.name).replace(/\s/g,'').startsWith(d.visit.replace(/\s/g,'')));if(v)return v;}let ll=null;if(key==='office'&&office()){ll=office();}else{const g=(state.settings.placeGeo||{})[key];if(g)ll=g;}return {id:'place:'+key,name:d.title||d.label,addr:d.addr,lat:ll?ll.lat:null,lng:ll?ll.lng:null,dur:30,place:key,mark:d.mark||'',color:d.color||'#0b1f4d'};}
+function wEnsurePlaces(){wEnsureOffice();const S=state.settings;S.placeGeo=S.placeGeo||{};for(const d of W_PLACES){if((d.key==='office'&&office())||d.visit||S.placeGeo[d.key]||wPlaceTried[d.key])continue;wPlaceTried[d.key]=true;geocodeOne(normAddr(d.addr)).then(g=>{S.placeGeo[d.key]={lat:g.lat,lng:g.lng};save();try{renderWeekly();renderWeeklyMap();}catch(e){}try{renderPatMap(false);}catch(e){}}).catch(()=>{});}}
+function placeMarkers(layer,store){const out=new Map();for(const d of W_PLACES){if(d.visit)continue;const P=wPlaceObj(d.key);if(!P||P.lat==null)continue;const m=L.marker([P.lat,P.lng],{icon:houseIcon(d.mark||'●',d.color||'#0b1f4d',!!d.office),zIndexOffset:d.office?900:850}).bindTooltip(esc(d.title||d.label),{direction:'top'}).addTo(layer);out.set(d.key,m);}return out;}
+function houseIcon(mark,color,big){const w=big?38:34;return L.divIcon({className:'',html:`<div class="mk-house-w" style="width:${w}px;height:${w}px"><div class="mk-house" style="background:${color}"><span>${esc(mark)}</span></div></div>`,iconSize:[w,w],iconAnchor:[w/2,w-2],tooltipAnchor:[0,-w+6]});}
+function wIsRound(c){const p=c&&c.p;return !!(p&&!p.ambiguous&&p.dur>=120)&&!c.note&&!c.cancel;}
+function wIsResident(lead,c){const a=lead.p,b=c.p&&!c.p.ambiguous?c.p:null;if(!a||!b||c.note||c.cancel)return false;if(a.lat!=null&&b.lat!=null)return hav(a,b)<0.08;const na=normAddr(a.addr||''),nb=normAddr(b.addr||'');return !!na&&!!nb&&(na===nb||nb.startsWith(na)||na.startsWith(nb));}
+function wFollowers(cells,ci){const lead=cells[ci];if(!wIsRound(lead))return [];const end=lead.t+wDur(lead);const out=[];for(let j=0;j<cells.length;j++){if(j===ci)continue;const c=cells[j];if(c.t>=lead.t&&c.t<end&&wIsResident(lead,c))out.push(j);}return out;}
+function wIsVisitCell(c){const p=c&&c.p&&!c.p.ambiguous?c.p:null;return !!(p&&p.lat!=null&&!c.note&&!c.cancel&&!p.place);}
+function wSiteGroups(cells){const out=[];let cur=[];const flush=()=>{if(cur.length>=2)out.push(cur);cur=[];};cells.forEach((c,i)=>{if(c.note)return;if(!wIsVisitCell(c)){flush();return;}if(cur.length){const pv=cells[cur[cur.length-1]];if(hav(pv.p,c.p)<0.08&&c.t-(pv.t+wDur(pv))<30){cur.push(i);return;}flush();}cur=[i];});flush();return out;}
+function wSiteGroupOf(cells,ci){for(const g of wSiteGroups(cells))if(g.includes(ci))return g;return [];}
+function wTake(d,lane,ci,single){const cells=wLaneCells(d,lane);const set=new Set([ci]);if(!single&&lane!==-1){wFollowers(cells,ci).forEach(j=>set.add(j));wSiteGroupOf(cells,ci).forEach(j=>set.add(j));}const idx=[...set].sort((a,b)=>a-b);const lead=cells[ci];const grp=idx.map(j=>cells[j]);for(const j of [...idx].reverse())cells.splice(j,1);return [lead,...grp.filter(c=>c!==lead)];}
+function wPlace(d,lane,grp,newT){if(lane===-1)grp=grp.filter(c=>!c.place);if(!grp.length)return;const dst=wLaneCells(d,lane);if(newT!=null){const delta=newT-grp[0].t;grp.forEach(c=>{c.t+=delta;c.moved=true;});}dst.push(...grp);dst.sort((a,b)=>a.t-b.t);}
+function wPrep(row){row.cells.forEach(c=>{if(c.place){c.p=wPlaceObj(c.place);c.note=false;c.cancel=false;return;}const fp=c.pid?pById(c.pid):null;c.p=fp||wMatch(c.v);c.note=c.bg==='#ffff00'||W_NOTE_RE.test(c.v);c.cancel=c.bg==='#ff00ff';});if(!row.sorted){row.cells.sort((a,b)=>a.t-b.t);row.sorted=true;}}
+let wSel=0;
+function wDayObj(){const w=state.weekly;if(!w)return null;const di=+$('#wDay').value||0;const d=w.days[di];if(d&&!d.pool)d.pool=[];if(d&&d.pool.some(c=>c.place))d.pool=d.pool.filter(c=>!c.place);return d;}
+function wLanes(d){return d.rows.map((r,i)=>({r,i}));}
+const W_DAY_END=(()=>{const m=String(BR.dayEnd||'18:00').match(/^(\d{1,2}):(\d{2})$/);return m?+m[1]*60+ +m[2]:1080;})();
+const WSLOTS=[...Array(Math.max(1,(W_DAY_END-540)/30+1))].map((_,i)=>540+i*30); // 9:00〜支店ごとの終了時刻
+function renderWeekly(){const w=state.weekly;const wd=$('#wDay');const board=$('#wBoard');if(!w){wd.innerHTML='';board.innerHTML='';$('#wStats').innerHTML='<div class="muted">「週間シフトを読み込む」を押してください（③の週の開始日の週）</div>';return;}const pd=wd.value;wd.innerHTML=w.days.map((d,i)=>`<option value="${i}">${d.label}</option>`).join('');if(pd!==''&&w.days[+pd])wd.value=pd;const d=wDayObj();if(!d)return;d.rows.forEach(wPrep);wPrep({cells:d.pool,sorted:true});{const dl=$('#wAddList');if(dl){const key=state.patients.length+':'+(state.patients[0]&&state.patients[0].id);if(dl.dataset.key!==key){dl.innerHTML=state.patients.filter(p=>p.name&&!/（施設）$/.test(p.name)||p.name).map(p=>`<option value="${esc(p.name)}">${esc(String(p.addr||'').replace(/^大阪府/,'').slice(0,18))}</option>`).join('');dl.dataset.key=key;}}}if(!d.ordered){const selRow=d.rows[wSel];wOrderRows(d);const k=d.rows.indexOf(selRow);if(k>=0)wSel=k;save();}if(!d.inited){wDefaultShow(d);const f=d.rows.findIndex(r=>r.show);if(f>=0&&!(d.rows[wSel]&&d.rows[wSel].show))wSel=f;save();}const di=+wd.value||0;
+const lanes=wLanes(d).filter(x=>!wHidden(x.r)).concat([{r:{staff:'未配置',kubun:'',cells:d.pool,pool:true},i:-1}]);
+let h='<div class="gridwrap"><table class="wk"><thead><tr><th class="name">スタッフ</th>'+WSLOTS.map(t=>`<th>${hm(t)}</th>`).join('')+'</tr></thead><tbody>';
+let numOf=new Map(),grpOf=new Map(),grpColor='';const chipHTML=(c,i,ci,conflict)=>{const p=c.p&&!c.p.ambiguous?c.p:null;const nm=numOf.get(ci);const gn=grpOf.get(ci);const cls=['wchip',c.note?'unm':'',c.cancel?'cancel':'',!p&&!c.note?'unm':'',conflict?'conflict':'',c.moved?'moved':'',p&&p.place?'place':'',gn?'ingrp':''].filter(Boolean).join(' ');const off=(c.t<540||c.t>W_DAY_END||c.t%30!==0);return `<span class="${cls}" draggable="true" data-lane="${i}" data-ci="${ci}" ${gn?`style="--gc:${grpColor||'var(--accent)'}"`:''}>${off?`<small class="ot">${hm(c.t)}</small>`:''}${p&&p.place&&p.mark?`<i class="pmk" style="background:${p.color}">${esc(p.mark)}</i>`:''}<span class="wn">${esc(c.v.split('\n')[0])}</span>${nm?`<b class="cn">${cnum(nm)}</b>`:''}${c.p&&c.p.ambiguous?'<span class="pill warn">同姓</span>':(!p&&!c.note?'<span class="pill warn">未</span>':'')}${c.cancel?'<span class="pill crit">取消</span>':''}<button class="x" data-act="del" title="未配置へ">×</button></span>`;};
+for(const {r,i} of lanes){wPrep(r);grpOf=new Map();if(!r.pool){wSiteGroups(r.cells).forEach((g,gi)=>g.forEach(j=>grpOf.set(j,g.length)));}numOf=new Map();if(!r.pool){let nn=0;r.cells.forEach((c,ci)=>{const p=c.p&&!c.p.ambiguous?c.p:null;if(!c.note&&!c.cancel&&p&&p.lat!=null&&!p.place){nn++;numOf.set(ci,nn);}});}const lc=r.pool?'':PALETTE[(r.color??i)%PALETTE.length];grpColor=lc;const ltxt=lc&&(parseInt(lc.slice(1,3),16)*0.299+parseInt(lc.slice(3,5),16)*0.587+parseInt(lc.slice(5,7),16)*0.114)>160?'#1d2b2e':'#fff';const selected=i===wSel;const bySlot=new Map();const other=[];let warn=0;let prev=null;const conflicts=new Set();let round=null;r.cells.forEach((c,ci)=>{if(!c.note){const inRound=round&&c.t>=round.t&&c.t<round.t+wDur(round);const cmp=(inRound&&prev===round)?null:prev;if(cmp&&cmp!==round&&cmp.t+wDur(cmp)>c.t+0.01){conflicts.add(ci);warn++;}else if(round&&cmp===round&&!inRound&&cmp.t+wDur(cmp)>c.t+0.01){conflicts.add(ci);warn++;}if(wIsRound(c))round=c;prev=c;}let k=Math.round(c.t/30)*30;if(k<540)k=540;if(k>W_DAY_END)k=W_DAY_END;if(!bySlot.has(k))bySlot.set(k,[]);bySlot.get(k).push(ci);});
+const trav=new Map();if(!r.pool){let pv=null;for(const c of r.cells){const p=c.p&&!c.p.ambiguous?c.p:null;if(c.note||c.cancel||!p||p.lat==null)continue;if(pv){const tr=travel(pv.p,p);const slotAfter=pv.t+wDur(pv);if(WSLOTS.includes(slotAfter)&&!bySlot.has(slotAfter)&&slotAfter<c.t)trav.set(slotAfter,`→${Math.round(tr.min)}分`);}pv={p,t:c.t};}}
+const n=r.cells.filter(c=>!c.note&&!c.cancel).length;
+h+=`<tr class="${selected?'sel':''}${r.pool?' pool':''}" data-lane="${i}"><td class="name" style="${lc?`background:${lc};color:${ltxt}`:''}"${r.pool?'':' draggable="true" title="ドラッグで行の並び替え"'}>${r.pool?esc(r.staff):`<span class="lchk"><input type="checkbox" data-act="show" title="地図に表示" ${r.show?'checked':''}><span class="nm" title="クリックで選択（地図がこの人に寄る）">${esc(r.staff)}</span></span>`}<small>${r.kubun?esc(r.kubun)+' ':''}${n}件${warn?` <span class="pill crit">重なり${warn}</span>`:''}</small></td>`;
+if(r.pool){h+=`<td class="slot" colspan="${WSLOTS.length}" data-t="pool" style="text-align:left;padding:2px 4px;max-width:none"><div class="wpoolrow"><div class="wpool-l"><input type="text" id="wAddName" class="waddname" list="wAddList" placeholder="＋利用者を追加（名前）" autocomplete="off" title="名前を入れてEnter。候補から選んでも追加されます">${r.cells.map((c,ci)=>`<span style="display:inline-block">${chipHTML(c,i,ci,false)}</span>`).join('')||'<span class="muted">追加した利用者や×で外したカードがここに入ります。表のマスへドラッグで配置</span>'}</div>${W_PALETTE.length?`<span class="wpal">${W_PALETTE.map(pl=>`<span class="wchip palette${pl.visit?'':' place'}" draggable="true" data-place="${pl.key}">${pl.mark?`<i class="pmk" style="background:${pl.color}">${esc(pl.mark)}</i>`:''}<span class="wn">${esc(pl.label)}</span></span>`).join('')}</span>`:''}</div></td>`;}
+else{for(const t of WSLOTS){const list=bySlot.get(t)||[];h+=`<td class="slot" data-t="${t}">${list.map(ci=>chipHTML(r.cells[ci],i,ci,conflicts.has(ci))).join('')}${!list.length&&trav.has(t)?`<span class="tr">${trav.get(t)}</span>`:''}</td>`;}}
+h+='</tr>';}
+board.innerHTML=h+'</tbody></table></div>';
+const selRow=wSel===-1?null:d.rows[wSel];let travelMin=0,km=0,n=0,first=null,last=null;const unm=[],amb=[];for(const r of d.rows){if(wHidden(r))continue;for(const c of r.cells){if(c.note)continue;if(c.p&&c.p.ambiguous)amb.push(c.v);else if(!c.p)unm.push(c.v);}}if(selRow){let prev=wHasChokai(selRow)?office():null;for(const c of selRow.cells){const p=c.p&&!c.p.ambiguous?c.p:null;if(c.note||c.cancel||!p||p.lat==null)continue;if(prev){const tr=travel(prev,p);travelMin+=tr.min;km+=tr.km||0;}prev=p;if(!p.place)n++;if(first==null)first=c.t;last=c.t+wDur(c);}}{const wo=$('#wOrder');if(selRow){let k=0;const items=[];selRow.cells.forEach((c,ci)=>{if(c.note)return;const p=c.p&&!c.p.ambiguous?c.p:null;const num=(p&&p.lat!=null&&!c.cancel&&!p.place)?(++k):0;items.push(`<span class="wo${c.cancel?' cancel':''}" data-lane="${wSel}" data-ci="${ci}">${num?`<b>${cnum(num)}</b>`:''}${hm(c.t)} ${esc(c.v.split('\n')[0])}${p&&wKey(p.name)!==wKey(c.v)?`<span class="muted">（${esc(p.name)}）</span>`:''}${c.cancel?' 取消':''}</span>`);});wo.innerHTML=items.length?`<span class="muted">${esc(selRow.staff)}の順路:</span>`+items.join(''):`<span class="muted">${esc(selRow.staff)}: この日の訪問はありません</span>`;wo.hidden=false;}else{wo.innerHTML='<span class="muted">スタッフ名をクリックすると順路が出ます</span>';wo.hidden=false;}}$('#wStats').innerHTML=selRow?`<b>${esc(selRow.staff)}</b><span class="sep">|</span>${n}件<span class="sep">|</span>${first!=null?hm(first)+'–'+hm(last):'—'}<span class="sep">|</span>移動 ${Math.round(travelMin)}分<span class="sep">|</span>${km.toFixed(1)}km`:'';$('#wNote').innerHTML=(unm.length?`<div>利用者リストに無い（地図に出ません）: ${esc([...new Set(unm)].join('、'))}</div>`:'')+(amb.length?`<div>同姓が複数で特定できず: ${esc([...new Set(amb)].join('、'))}</div>`:'');}
+let wFitMode='all';let wZoomed=false;
+function wFit(mode){wFitMode=mode||'all';if(wFitMode==='all')wZoomed=false;renderWeeklyMap();}
+let wMarkers=new Map();
+function wHighlight(lane,ci){$$('.marker-num.hl').forEach(e=>e.classList.remove('hl'));if(lane==null)return;const m=wMarkers.get(lane+':'+ci);if(!m)return;const el=m.getElement();const inner=el&&el.querySelector('.marker-num');if(inner)inner.classList.add('hl');m.setZIndexOffset(1000);const ll=m.getLatLng();if(!mapWeekly.getBounds().pad(-0.1).contains(ll))mapWeekly.panTo(ll);}
+function renderWeeklyMap(){if(!mapWeekly)return;weeklyLayer.clearLayers();wMarkers=new Map();const d=wDayObj();if(!d)return;const selPts=[];const di=+$('#wDay').value||0;const list=d.rows.map((r,i)=>i).filter(i=>d.rows[i].show&&!wHidden(d.rows[i]));const all=list.length>1;const pts=[];const o=office();$('#wLegend').innerHTML=list.map(i=>`<span><i style="background:${PALETTE[(d.rows[i].color??i)%PALETTE.length]}"></i>${esc(d.rows[i].staff)}</span>`).join('');wEnsurePlaces();const anyChokai=list.some(i=>wHasChokai(d.rows[i]));const plm=placeMarkers(weeklyLayer);if(!plm.has('office')&&o){L.marker([o.lat,o.lng],{icon:houseIcon('本','#0b1f4d',true),zIndexOffset:900}).bindTooltip('事務所',{direction:'top'}).addTo(weeklyLayer);}if(o&&anyChokai)pts.push([o.lat,o.lng]);for(const i of list){const row=d.rows[i];if(!row)continue;wPrep(row);const col=PALETTE[(row.color??i)%PALETTE.length];const line=[];if(o&&wHasChokai(row))line.push([o.lat,o.lng]);let n=0;row.cells.forEach((c,ci)=>{const p=c.p&&!c.p.ambiguous?c.p:null;if(c.note||c.cancel||!p||p.lat==null)return;if(p.place){line.push([p.lat,p.lng]);pts.push([p.lat,p.lng]);if(i===wSel)selPts.push([p.lat,p.lng]);if(plm.has(p.place))wMarkers.set(i+':'+ci,plm.get(p.place));return;}n++;line.push([p.lat,p.lng]);pts.push([p.lat,p.lng]);if(i===wSel)selPts.push([p.lat,p.lng]);const dark=(parseInt(col.slice(1,3),16)*0.299+parseInt(col.slice(3,5),16)*0.587+parseInt(col.slice(5,7),16)*0.114)>160;const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:`<div class="marker-num" style="background:${col};${dark?'color:#1d2b2e;border-color:#1d2b2e':''}">${n}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).bindTooltip(`${hm(c.t)} ${esc(p.name)}${all?'<br>'+esc(row.staff):''}`,{direction:'top'}).addTo(weeklyLayer);wMarkers.set(i+':'+ci,mk);});if(line.length>1)L.polyline(line,{color:col,weight:4,opacity:.9}).addTo(weeklyLayer);}const target=(wFitMode==='sel'&&selPts.length)?selPts:pts;if(wFitMode!=='none'&&target.length)mapWeekly.fitBounds(target,{padding:[30,30],maxZoom:15});wFitMode='none';if(wPick)wHighlight(wPick.lane,wPick.ci);}
+function wLaneCells(d,lane){return lane===-1?d.pool:d.rows[lane].cells;}
+function wMove(d,from,fromCi,to,toCi,single){const srcLen=wLaneCells(d,from).length;const grp=wTake(d,from,fromCi,single);const cell=grp[0];const dst=wLaneCells(d,to);let idx=toCi==null?dst.length:toCi;if(from===to&&fromCi<idx)idx-=Math.min(grp.length,idx-fromCi);idx=Math.max(0,Math.min(idx,dst.length));dst.splice(idx,0,cell);if(to!==-1){const prev=[...dst.slice(0,idx)].reverse().find(c=>!c.note);const next=dst.slice(idx+1).find(c=>!c.note);let t;if(prev)t=ceilG(prev.t+wDur(prev),30);else if(next)t=next.t-wDur(cell);else t=Math.max(cell.t,540);t=Math.min(Math.max(t,420),1200);const delta=t-cell.t;grp.forEach(c=>{c.t+=delta;c.moved=true;});}dst.splice(idx+1,0,...grp.slice(1));save();renderWeekly();renderWeeklyMap();}
+let wDrag=null;
+function wClearInd(){$$('#wBoard td.drop').forEach(x=>x.classList.remove('drop'));}
+$('#wBoard').addEventListener('dragstart',e=>{const ch=e.target.closest('.wchip');if(!ch)return;$('#wTip').hidden=true;wDrag=ch.dataset.place?{place:ch.dataset.place}:{lane:+ch.dataset.lane,ci:+ch.dataset.ci,single:!!(e.altKey||wLongPress)};wLongPress=false;ch.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain','move');}catch(x){}});
+let wRowDrag=null;
+function wRowClearInd(){$$('#wBoard tr.rowdrop').forEach(x=>x.classList.remove('rowdrop'));}
+$('#wBoard').addEventListener('dragstart',e=>{if(e.target.closest('.wchip'))return;const td=e.target.closest('td.name');if(!td||!td.hasAttribute('draggable'))return;const tr=td.closest('tr');wRowDrag={lane:+tr.dataset.lane};tr.classList.add('rowdragging');$('#wTip').hidden=true;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain','lane');}catch(x){}});
+$('#wBoard').addEventListener('dragover',e=>{if(!wRowDrag)return;const tr=e.target.closest('tr[data-lane]');if(!tr||tr.classList.contains('pool')||!tr.closest('tbody'))return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!tr.classList.contains('rowdrop')){wRowClearInd();tr.classList.add('rowdrop');}});
+$('#wBoard').addEventListener('drop',e=>{if(!wRowDrag)return;e.preventDefault();const tr=e.target.closest('tr[data-lane]');wRowClearInd();const from=wRowDrag.lane;wRowDrag=null;$$('#wBoard tr.rowdragging').forEach(x=>x.classList.remove('rowdragging'));if(!tr||tr.classList.contains('pool'))return;const to=+tr.dataset.lane;if(to===from)return;const d=wDayObj();if(!d)return;const selRow=d.rows[wSel];const [row]=d.rows.splice(from,1);d.rows.splice(to,0,row);wSel=Math.max(0,d.rows.indexOf(selRow));save();renderWeekly();renderWeeklyMap();});
+$('#wBoard').addEventListener('dragend',()=>{wRowClearInd();$$('#wBoard tr.rowdragging').forEach(x=>x.classList.remove('rowdragging'));wRowDrag=null;});
+$('#wBoard').addEventListener('dragover',e=>{if(!wDrag)return;const td=e.target.closest('td.slot');if(!td)return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!td.classList.contains('drop')){wClearInd();td.classList.add('drop');}});
+$('#wBoard').addEventListener('dragleave',e=>{const td=e.target.closest('td.slot');if(td&&!td.contains(e.relatedTarget))td.classList.remove('drop');});
+$('#wBoard').addEventListener('drop',e=>{if(!wDrag)return;const td=e.target.closest('td.slot');wClearInd();if(!td){wDrag=null;return;}e.preventDefault();const d=wDayObj();const tr=td.closest('tr');const to=+tr.dataset.lane;const tt=td.dataset.t;if(wDrag.place){wAddPlace(d,to,tt,wDrag.place);wDrag=null;return;}const grp=wTake(d,wDrag.lane,wDrag.ci,wDrag.single);if(!grp[0]){wDrag=null;return;}if(grp.length>1)toast(`${grp.length}人まとめて移動しました（1人だけ動かすときは Option/Alt を押しながら）`);wPlace(d,to,grp,tt==='pool'?null:+tt);wDrag=null;save();renderWeekly();renderWeeklyMap();});
+$('#wBoard').addEventListener('dragend',()=>{wClearInd();$$('#wBoard .wchip.dragging').forEach(x=>x.classList.remove('dragging'));wDrag=null;});
+function wAddByName(raw){const d=wDayObj();if(!d)return false;const name=String(raw||'').trim();if(!name)return false;const nn=x=>wKanji(String(x||'').replace(/[\s　]/g,''));const k=nn(name);let hit=state.patients.filter(p=>nn(p.name)===k);if(!hit.length)hit=state.patients.filter(p=>nn(p.name).startsWith(k));if(hit.length>1){const inp=$('#wAddName');if(inp)inp.focus();toast(`「${name}」に当てはまる人が${hit.length}人います。候補からフルネームで選んでください`);return false;}const p=hit.length===1?hit[0]:null;const cell={t:540,v:p?p.name:name,bg:'',moved:true};if(p)cell.pid=p.id;d.pool.push(cell);save();renderWeekly();const inp=$('#wAddName');if(inp){inp.value='';inp.focus();}toast(p?`${p.name} を未配置に追加しました。行の時刻のマスへドラッグで配置`:`「${name}」は①の利用者リストにいません（地図には出ません）`);return true;}
+function wAddPlace(d,lane,tt,key){const pl=wPlaceDef(key);if(!pl||tt==='pool'||lane<0)return;const dst=wLaneCells(d,lane);dst.push({t:+tt,v:pl.label,bg:'',place:key,moved:true});dst.sort((a,b)=>a.t-b.t);save();renderWeekly();renderWeeklyMap();}
+function wTipText(d,lane,ci){const c=wLaneCells(d,lane)[ci];if(!c)return '';const p=c.p&&!c.p.ambiguous?c.p:null;const st=lane>=0?d.rows[lane].staff:'未配置';const gsz=lane>=0?wSiteGroupOf(wLaneCells(d,lane),ci).length:0;const flags=[gsz?`施設まとめ: ${gsz}人`:'',c.p&&c.p.ambiguous?'同姓が複数':'',(!p&&!c.note)?'利用者リストに無し':'',c.cancel?'取消':'',(p&&p.lat==null)?'住所が未配置':''].filter(Boolean);return `<b>${esc(p?p.name:c.v.split('\n')[0])}</b>${flags.length?`<br><span style="opacity:.8">${flags.join('・')}</span>`:''}`;}
+function wShowTip(chip){const d=wDayObj();if(!d||!chip)return;const tip=$('#wTip');if(chip.dataset.place){const pl=wPlaceDef(chip.dataset.place);tip.innerHTML=pl?`<b>${esc(pl.label)}</b><br><span style="opacity:.8">${esc(pl.addr.replace(/^大阪府/,''))}</span><br><span style="opacity:.8">行の時刻のマスへドラッグで追加（何回でも使えます）</span>`:'';}else tip.innerHTML=wTipText(d,+chip.dataset.lane,+chip.dataset.ci);tip.hidden=false;const r=chip.getBoundingClientRect();const tw=tip.offsetWidth,th=tip.offsetHeight;let x=r.right+4;tip.classList.remove('flip');if(x+tw>window.innerWidth-6){x=r.left-tw-4;tip.classList.add('flip');}let y=r.top-th+6;if(y<4)y=r.bottom+4;tip.style.left=x+'px';tip.style.top=y+'px';}
+function wHideTip(){const tip=$('#wTip');tip.hidden=true;if(wPick){const ch=$(`#wBoard .wchip[data-lane="${wPick.lane}"][data-ci="${wPick.ci}"]`);if(ch)wShowTip(ch);}}
+$('#wBoard').addEventListener('keydown',e=>{if(e.target.id!=='wAddName')return;if(e.key==='Enter'&&!e.isComposing){e.preventDefault();wAddByName(e.target.value);}else if(e.key==='Escape'){e.target.value='';}});
+$('#wBoard').addEventListener('input',e=>{if(e.target.id!=='wAddName')return;if(e.inputType==='insertReplacementText'||e.inputType===undefined){const v=e.target.value;if(state.patients.some(p=>p.name===v))wAddByName(v);}});
+$('#wBoard').addEventListener('mouseover',e=>{if(wDrag)return;const ch=e.target.closest('.wchip');if(ch)wShowTip(ch);});
+$('#wBoard').addEventListener('mouseout',e=>{const ch=e.target.closest('.wchip');if(ch&&!ch.contains(e.relatedTarget))wHideTip();});
+$('#wBoard').addEventListener('scroll',()=>{$('#wTip').hidden=true;},true);
+$('#wBoard').addEventListener('pointerdown',e=>{if(e.target.closest('.wchip'))$('#wTip').hidden=true;});
+$('#wOrder').addEventListener('click',e=>{const it=e.target.closest('.wo');if(!it)return;$$('#wOrder .wo.on').forEach(x=>x.classList.remove('on'));it.classList.add('on');wHighlight(+it.dataset.lane,+it.dataset.ci);const ch=$(`#wBoard .wchip[data-lane="${it.dataset.lane}"][data-ci="${it.dataset.ci}"]`);if(ch){ch.scrollIntoView({block:'nearest',inline:'nearest'});wShowTip(ch);setTimeout(()=>{if(!wPick)$('#wTip').hidden=true;},1800);}});
+let wLongPress=false,wLpTimer=null;
+function wGroupIdx(d,lane,ci){if(lane<0)return [];const cells=wLaneCells(d,lane);const set=new Set([...wFollowers(cells,ci),...wSiteGroupOf(cells,ci)]);if(set.size)set.add(ci);return [...set];}
+$('#wBoard').addEventListener('pointerdown',e=>{const ch=e.target.closest('.wchip');if(!ch||ch.dataset.place)return;clearTimeout(wLpTimer);wLongPress=false;wLpTimer=setTimeout(()=>{wLongPress=true;ch.classList.add('lp');},550);});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#wBoard').addEventListener(ev,()=>{clearTimeout(wLpTimer);setTimeout(()=>$$('#wBoard .wchip.lp').forEach(x=>x.classList.remove('lp')),300);},true));
+let wPick=null;
+function wClearPick(){wPick=null;wHighlight(null);$('#wTip').hidden=true;$$('#wBoard .wchip.picked').forEach(x=>x.classList.remove('picked'));$('#wBoard').classList.remove('picking');}
+$('#wBoard').addEventListener('click',e=>{if(e.target.id==='wAddName')return;const d=wDayObj();if(!d)return;const chip=e.target.closest('.wchip');if(chip&&chip.dataset.place){if(wPick&&wPick.place===chip.dataset.place){wClearPick();return;}wClearPick();wPick={place:chip.dataset.place};chip.classList.add('picked');$('#wBoard').classList.add('picking');toast('追加する時刻のマスをタップ（もう一度カードをタップで解除）');return;}if(chip&&!e.target.closest('button')){if(wPick&&wPick.lane===+chip.dataset.lane&&wPick.ci===+chip.dataset.ci){wClearPick();return;}wClearPick();wPick={lane:+chip.dataset.lane,ci:+chip.dataset.ci,single:wLongPress};wLongPress=false;chip.classList.add('picked');{const g=wPick.single?[]:wGroupIdx(d,wPick.lane,wPick.ci);g.forEach(j=>{const o=$(`#wBoard .wchip[data-lane="${wPick.lane}"][data-ci="${j}"]`);if(o)o.classList.add('picked');});}$('#wBoard').classList.add('picking');wHighlight(wPick.lane,wPick.ci);wShowTip(chip);toast(wPick.single?'1人だけ移動します。移動先のマスをタップ':(wGroupIdx(d,wPick.lane,wPick.ci).length>1?'まとめて移動します。移動先のマスをタップ（1人だけなら長押ししてからタップ）':'地図で強調表示中。移動するときは移動先のマスをタップ（もう一度カードをタップで解除）'));return;}if(wPick){const td=e.target.closest('td.slot');if(td){const tr=td.closest('tr');const to=+tr.dataset.lane;const tt=td.dataset.t;if(wPick.place){const k=wPick.place;wClearPick();wAddPlace(d,to,tt,k);return;}const grp=wTake(d,wPick.lane,wPick.ci,wPick.single);wClearPick();if(grp[0]){wPlace(d,to,grp,tt==='pool'?null:+tt);save();renderWeekly();renderWeeklyMap();}return;}}if(e.target.matches('input[data-act="show"]')){const i=+e.target.closest('tr').dataset.lane;d.rows[i].show=e.target.checked;wSel=i;save();$('#wAll').checked=d.rows.every(r=>r.show||!r.cells.some(c=>!c.note));renderWeekly();wFit('all');return;}const nm=e.target.closest('td.name');if(nm&&!e.target.matches('input')){const i=+nm.parentElement.dataset.lane;if(i<0)return;if(i===wSel&&wZoomed){wZoomed=false;renderWeekly();wFit('all');return;}wSel=i;wZoomed=true;if(!d.rows[i].show){d.rows[i].show=true;save();}renderWeekly();wFit('sel');return;}const b=e.target.closest('button[data-act="del"]');if(b){const ch=b.closest('.wchip');const cells=wLaneCells(d,+ch.dataset.lane);const cc=cells[+ch.dataset.ci];if(cc&&cc.place){cells.splice(+ch.dataset.ci,1);save();renderWeekly();renderWeeklyMap();}else wMove(d,+ch.dataset.lane,+ch.dataset.ci,-1,null,true);}});
+$('#wBoard').addEventListener('change',e=>{const sel=e.target.closest('select[data-act="time"]');if(!sel)return;const d=wDayObj();const ch=sel.closest('.chip');const cells=wLaneCells(d,+ch.dataset.lane);const c=cells[+ch.dataset.ci];c.t=+sel.value;c.moved=true;cells.sort((a,b)=>a.t-b.t);save();renderWeekly();renderWeeklyMap();});
+function wDayTSV(){const d=wDayObj();if(!d)return '';const w=state.weekly;const di=+$('#wDay').value||0;const S=state.settings;let dateStr=d.label;if(S.weekStart){const dt=new Date(S.weekStart+'T00:00:00');dt.setDate(dt.getDate()+di);dateStr=`${dt.getDate()}日（${DAYS[dt.getDay()]}）`;}const lines=[];for(const r of d.rows){const am=new Array(12).fill(''),pm=new Array(15).fill('');for(const c of r.cells){const k=Math.floor((c.t-420)/30);const v=c.v.split('\n')[0];if(k<0)continue;if(k<12)am[k]=am[k]?am[k]+'/'+v:v;else if(k-12<15)pm[k-12]=pm[k-12]?pm[k-12]+'/'+v:v;}lines.push([dateStr,r.staff,r.kubun||''].concat(am,[r.staff],pm).join('\t'));}return lines.join('\n');}
+$('#btnWReset').addEventListener('click',()=>{const w=state.weekly,o=state.weeklyOrig;if(!w||!o){toast('読み込み時の控えがありません。「週間シフトを読み込む」を押してください');return;}const di=+$('#wDay').value||0;if(!o.days[di]){toast('この日の控えがありません');return;}if(!confirm(`${w.days[di].label} の並びを読み込んだときの状態に戻します。よろしいですか？`))return;const show=new Map(w.days[di].rows.map(r=>[r.staff,r.show]));const fresh=JSON.parse(JSON.stringify(o.days[di]));fresh.rows.forEach(r=>{r.show=show.get(r.staff)||false;});fresh.pool=[];w.days[di]=fresh;save();renderWeekly();wFit('all');toast('元に戻しました');});
+$('#wDay').addEventListener('change',()=>{const d=wDayObj();if(!d)return;const f=d.rows.findIndex(r=>r.show);wSel=f>=0?f:0;wZoomed=false;renderWeekly();wFitTable();wFit('all');});
+$('#wAll').addEventListener('change',()=>{const d=wDayObj();if(!d)return;const on=$('#wAll').checked;d.rows.forEach(r=>{r.show=on&&!wHidden(r)&&r.cells.some(c=>!c.note);});save();renderWeekly();wFit('all');});
+['#wShowRes','#wShowRehab'].forEach(sel=>$(sel).addEventListener('change',()=>{renderWeekly();wFitTable();renderWeeklyMap();}));if(!W_REHAB_NAMES.length)$('#wShowRehabWrap').hidden=true;
+
+/* ========= 地図幅の調整（区切りをドラッグ） ========= */
+function initSplits(){$$('.split').forEach(sp=>{if(sp.children.length!==2)return;const sec=sp.closest('section');const id=sec?sec.id:'x';const g=document.createElement('div');g.className='gutter';g.title='ドラッグで幅を変更、ダブルクリックで元に戻す';sp.insertBefore(g,sp.children[1]);const def=+sp.dataset.default||50;const apply=pct=>{sp.style.gridTemplateColumns=`${pct}% 10px 1fr`;};let saved=null;try{saved=localStorage.getItem('vrt_split_'+id);}catch(e){}if(saved)apply(+saved);else apply(def);const refresh=()=>{[mapPat,mapRoute,mapWeekly].forEach(m=>{try{m&&m.invalidateSize();}catch(e){}});};g.addEventListener('pointerdown',e=>{e.preventDefault();g.setPointerCapture(e.pointerId);g.classList.add('active');document.body.classList.add('resizing');const rect=sp.getBoundingClientRect();const move=ev=>{let pct=(ev.clientX-rect.left)/rect.width*100;pct=Math.max(25,Math.min(75,pct));apply(pct);sp._pct=pct;refresh();};const up=ev=>{g.removeEventListener('pointermove',move);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);try{g.releasePointerCapture(ev.pointerId);}catch(x){}g.classList.remove('active');document.body.classList.remove('resizing');if(sp._pct!=null){try{localStorage.setItem('vrt_split_'+id,String(Math.round(sp._pct)));}catch(x){}}refresh();};g.addEventListener('pointermove',move);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);});g.addEventListener('dblclick',()=>{apply(def);try{localStorage.removeItem('vrt_split_'+id);}catch(e){}refresh();});});}
+
+function heightBar(barId,target,key,minH,after){const bar=$(barId);if(!bar||!target)return;const apply=h=>{h=Math.max(minH,Math.min(1400,h));target.style.height=h+'px';if(after)after();return h;};let saved=null;try{saved=+localStorage.getItem(key);}catch(e){}if(saved)apply(saved);bar.addEventListener('pointerdown',e=>{e.preventDefault();bar.setPointerCapture(e.pointerId);bar.classList.add('active');const y0=e.clientY,h0=target.getBoundingClientRect().height;let h=h0;const move=ev=>{h=apply(h0+(ev.clientY-y0));};const up=ev=>{bar.removeEventListener('pointermove',move);bar.removeEventListener('pointerup',up);bar.removeEventListener('pointercancel',up);try{bar.releasePointerCapture(ev.pointerId);}catch(x){}bar.classList.remove('active');try{localStorage.setItem(key,String(Math.round(h)));}catch(x){}};bar.addEventListener('pointermove',move);bar.addEventListener('pointerup',up);bar.addEventListener('pointercancel',up);});bar.addEventListener('dblclick',()=>{target.style.height='';try{localStorage.removeItem(key);}catch(x){}if(after)after();});}
+function widthBar(barId,target,key,minW,after){const bar=$(barId);if(!bar||!target)return;const apply=w=>{const pw=target.parentElement.getBoundingClientRect().width;const maxW=pw>0?pw-14:1e9;w=Math.max(minW,Math.min(maxW,w));target.style.width=w+'px';if(after)after();return w;};let saved=null;try{saved=+localStorage.getItem(key);}catch(e){}if(saved)apply(saved);bar.addEventListener('pointerdown',e=>{e.preventDefault();bar.setPointerCapture(e.pointerId);bar.classList.add('active');const x0=e.clientX,w0=target.getBoundingClientRect().width;let w=w0;const move=ev=>{w=apply(w0+(ev.clientX-x0));};const up=ev=>{bar.removeEventListener('pointermove',move);bar.removeEventListener('pointerup',up);bar.removeEventListener('pointercancel',up);try{bar.releasePointerCapture(ev.pointerId);}catch(x){}bar.classList.remove('active');try{localStorage.setItem(key,String(Math.round(w)));}catch(x){}};bar.addEventListener('pointermove',move);bar.addEventListener('pointerup',up);bar.addEventListener('pointercancel',up);});bar.addEventListener('dblclick',()=>{target.style.width='';try{localStorage.removeItem(key);}catch(x){}if(after)after();});}
+function initMapHeightBar(){const inv=()=>{try{mapWeekly&&mapWeekly.invalidateSize();}catch(e){}};wSideBarInit();widthBar('#wMapWBar',document.getElementById('wMapPanel'),'vrt_mapw',320,inv);heightBar('#wTableBar',document.querySelector('#tab-weekly .stack>.panel:first-child'),'vrt_tblh',110,inv);heightBar('#mapWeeklyBar',document.getElementById('mapWeekly'),'vrt_maph',150,inv);}
+
+/* ========= タブ・全体 ========= */
+function showTab(name){$$('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name?'true':'false'));$$('section.tab').forEach(s=>s.classList.toggle('active',s.id==='tab-'+name));if(name==='patients'){setTimeout(()=>{mapPat.invalidateSize();renderPatMap(true);},50);}if(name==='route'){renderRoute();setTimeout(()=>{mapRoute.invalidateSize();renderRouteMap();},50);}if(name==='plan')renderPlan();if(name==='grid')renderGrid();if(name==='weekly'){wApplyMapPos();renderWeekly();setTimeout(()=>{mapWeekly.invalidateSize();wFit('all');},50);}try{localStorage.setItem('vrt_tab',name);}catch(e){}}
+$$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+function renderAll(){renderPatients();renderStaff();syncModeUI();renderSettings();renderPatMap(false);renderPlan();renderRoute();renderGrid();}
+$('#btnParsePat').addEventListener('click',()=>{const rows=parsePatients($('#patText').value,state.settings);if(!rows.length){toast('読み取れる行がありません');return;}const old=new Map(state.patients.map(p=>[normAddr(p.addr),p]));for(const r of rows){const o=old.get(normAddr(r.addr));if(o&&o.lat!=null){r.lat=o.lat;r.lng=o.lng;r.level=o.level;r.manual=o.manual;}}state.patients=rows;state.routes={};state.unassigned=[];save();renderAll();toast(`${rows.length}行を取り込みました。「住所→地図に配置」を押してください`);});
+$('#btnAppendPat').addEventListener('click',()=>{const rows=parsePatients($('#patText').value,state.settings);state.patients=state.patients.concat(rows);save();renderAll();toast(`${rows.length}行を追加しました`);});
+$('#btnClearPat').addEventListener('click',()=>{if(!confirm('利用者を全て消しますか？'))return;state.patients=[];state.routes={};state.unassigned=[];save();renderAll();});
+$('#btnGeocode').addEventListener('click',geocodeAll);
+let geoCheckRes=null;
+async function geoCheck(){const btn=$('#btnGeoCheck');btn.disabled=true;const box=$('#geoCheck');box.hidden=false;box.classList.remove('ok');const targets=state.patients.filter(p=>p.addr);const byAddr=new Map();for(const p of targets){const k=normAddr(p.addr);if(!byAddr.has(k))byAddr.set(k,[]);byAddr.get(k).push(p);}const moved=[],coarse=[],fail=[],manual=[];let n=0;for(const [k,ps] of byAddr){n++;box.innerHTML=`<div class="gc-head">点検中 ${n}/${byAddr.size}…</div>`;let g=null;try{g=await geocodeOne(k);}catch(e){}for(const p of ps){if(!g){fail.push({p});continue;}if(p.lat==null){moved.push({p,g,d:null});continue;}const d=hav({lat:p.lat,lng:p.lng},g)*1000;if(p.manual){if(d>300)manual.push({p,g,d});continue;}if(d>150)moved.push({p,g,d});else if(g.pointLevel<8)coarse.push({p,g,d});}}geoCheckRes={moved,coarse,fail,manual};renderGeoCheck();btn.disabled=false;}
+function renderGeoCheck(){const box=$('#geoCheck');const r=geoCheckRes;if(!r){box.hidden=true;return;}const km=d=>d==null?'未配置':d>=1000?(d/1000).toFixed(1)+'km':Math.round(d)+'m';const item=(x,lab)=>`<span class="gc-item" data-id="${x.p.id}" title="${esc(x.p.addr)}">${esc(x.p.name)} <b>${lab}</b></span>`;let h='';if(!r.moved.length&&!r.fail.length&&!r.manual.length){box.classList.add('ok');h=`<div class="gc-head">ずれている人はいません（${state.patients.length}人を点検）。${r.coarse.length?`町丁目までしか特定できない人が${r.coarse.length}人います（地図でピンを確認してください）。`:''}</div>`;}else{box.classList.remove('ok');if(r.moved.length)h+=`<div class="gc-head"><b>住所の位置とずれている人 ${r.moved.length}人</b><button class="small primary" id="btnGeoFix">正しい位置にまとめて直す</button></div><div class="gc-list">${r.moved.sort((a,b)=>(b.d??1e9)-(a.d??1e9)).map(x=>item(x,km(x.d))).join('')}</div>`;if(r.manual.length)h+=`<div class="gc-head">手で動かしたピンで住所と${'300m'}以上離れている人 ${r.manual.length}人（意図して動かしたなら問題ありません）<button class="small" id="btnGeoFixManual">これも住所の位置に戻す</button></div><div class="gc-list">${r.manual.map(x=>item(x,km(x.d))).join('')}</div>`;if(r.fail.length)h+=`<div class="gc-head">住所から位置を出せなかった人 ${r.fail.length}人（住所を確認）</div><div class="gc-list">${r.fail.map(x=>item(x,'?')).join('')}</div>`;if(r.coarse.length)h+=`<div class="gc-head muted">町丁目までしか特定できない人 ${r.coarse.length}人（ピンは町丁目の中心付近。必要ならドラッグで調整）</div><div class="gc-list">${r.coarse.map(x=>item(x,'町丁目')).join('')}</div>`;}h+=`<div class="gc-head"><button class="small" id="btnGeoClose">閉じる</button></div>`;box.innerHTML=h;box.hidden=false;}
+function geoApply(list){for(const x of list){const same=state.patients.filter(q=>normAddr(q.addr)===normAddr(x.p.addr));for(const q of same){q.lat=x.g.lat;q.lng=x.g.lng;q.level=x.g.pointLevel>=8?8:Math.min(x.g.level,3);q.manual=false;}}save();renderPatients();renderPatMap(false);}
+$('#btnGeoCheck').addEventListener('click',geoCheck);
+async function addOnePatient(){const name=$('#aoName').value.trim().replace(/\t/g,' '),addr=$('#aoAddr').value.trim().replace(/\t/g,' ');const dur=Math.max(10,parseInt($('#aoDur').value)||30);if(!name){toast('氏名を入れてください');$('#aoName').focus();return;}if(!addr){toast('住所を入れてください');$('#aoAddr').focus();return;}const nn=n=>String(n).replace(/[\s　]/g,'');if(state.patients.some(p=>nn(p.name)===nn(name))&&!confirm(`「${name}」はすでにリストにいます。もう1行追加しますか？`))return;const np=parsePatients(`${name}\t${addr}\t${dur}`,state.settings)[0];if(!np){toast('追加できませんでした');return;}state.patients.push(np);const btn=$('#btnAddOne');btn.disabled=true;$('#geoStatus').textContent=`${name} を配置中…`;try{const g=await geocodeOne(normAddr(addr));np.lat=g.lat;np.lng=g.lng;np.level=g.pointLevel>=8?8:Math.min(g.level,3);$('#geoStatus').textContent=np.level>=8?`${name} を追加しました（番地まで一致）`:`${name} を追加しました（町丁目まで。ピンを確認してください）`;}catch(e){np.level=0;$('#geoStatus').textContent=`${name} を追加しましたが、住所が地図に配置できませんでした。住所を確認してください`;}btn.disabled=false;save();renderAll();renderPatMap(false);patHighlight(np.id,{scroll:true});$('#aoName').value='';$('#aoAddr').value='';$('#aoDur').value='30';toast(`${name} を追加しました`);}
+$('#btnAddOne').addEventListener('click',addOnePatient);
+['#aoName','#aoAddr','#aoDur'].forEach(sel=>$(sel).addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();addOnePatient();}}));
+$('#geoCheck').addEventListener('click',e=>{const it=e.target.closest('.gc-item');if(it){patHighlight(it.dataset.id,{scroll:true});return;}if(e.target.id==='btnGeoFix'){const n=geoCheckRes.moved.length;geoApply(geoCheckRes.moved);geoCheckRes.moved=[];renderGeoCheck();toast(`${n}人を住所の位置に直しました`);}else if(e.target.id==='btnGeoFixManual'){const n=geoCheckRes.manual.length;if(!confirm(`手で動かした${n}人のピンを住所の位置に戻します。よろしいですか？`))return;geoApply(geoCheckRes.manual);geoCheckRes.manual=[];renderGeoCheck();toast(`${n}人を住所の位置に戻しました`);}else if(e.target.id==='btnGeoClose'){geoCheckRes=null;renderGeoCheck();}});$('#btnGsiAll').addEventListener('click',gsiAll);
+$('#btnParseStaff').addEventListener('click',()=>{const s=parseStaff($('#staffText').value);if(!s.length){toast('読み取れる行がありません');return;}state.staff=s;state.settings.anonMode=false;state.routes={};state.unassigned=[];save();renderAll();toast(`${s.length}人を取り込みました`);});
+function applyAnon(){const S=state.settings;S.dayCounts=[0,1,2,3,4,5,6].map(d=>Math.max(0,parseInt($('#cnt'+d).value)||0));S.anonMode=true;const n=Math.max(...S.dayCounts,0);const old=new Map(state.staff.map(s=>[s.name,s]));state.staff=[];for(let k=1;k<=n;k++){const name='ルート'+k;const o=old.get(name);state.staff.push({id:o?o.id:'anon'+k,name,work:[0,1,2,3,4,5,6].map(d=>k<=S.dayCounts[d]),winText:o?o.winText:''});}state.routes={};state.unassigned=[];save();renderAll();toast(`ルート枠を作りました（最大${n}本/日）。④で作成してください`);}
+function syncModeUI(){const S=state.settings;$('#modeAnon').checked=!!S.anonMode;$('#modeNamed').checked=!S.anonMode;[0,1,2,3,4,5,6].forEach(d=>{$('#cnt'+d).value=(S.dayCounts||[3,5,5,4,5,4,4])[d];});}
+$('#btnApplyAnon').addEventListener('click',applyAnon);
+function gasFetch(url){if(GAS&&(GAS.api||(window.google&&google.script&&google.script.run))){const q=new URLSearchParams(url.split('?')[1]||'');return gasCall(q.get('sheet')==='weekly'?'apiReadWeekly':'apiReadWeek',q.get('start'),BRANCH).then(j=>JSON.parse(j));}return new Promise(async(res,rej)=>{try{const r=await fetch(url,{redirect:'follow'});if(!r.ok)throw new Error('HTTP '+r.status);res(await r.json());return;}catch(e){}
+  const cb='__gas_cb_'+Date.now();const sc=document.createElement('script');window[cb]=d=>{delete window[cb];sc.remove();res(d);};sc.onerror=()=>{delete window[cb];sc.remove();rej(new Error('GASに接続できません（URL・デプロイ設定を確認）'));};sc.src=url+'&callback='+cb;document.body.appendChild(sc);});}
+async function gasLoad(){const S=state.settings;if(!S.gasUrl||!S.gasToken){toast('③設定にURLと合言葉を入れてください');showTab('settings');return;}if(!S.weekStart){toast('③設定で週の開始日を入れてください');showTab('settings');return;}const st=$('#gasStatus');st.textContent='読み込み中…';$('#btnGasLoad').disabled=true;try{const d=await gasFetch(`${S.gasUrl}${S.gasUrl.includes('?')?'&':'?'}token=${encodeURIComponent(S.gasToken)}&start=${S.weekStart}`);if(!d||!d.ok)throw new Error(d&&d.error?d.error:'読み取りに失敗');const lines=d.staff.filter(x=>x.field.some(Boolean)).map(x=>x.name+'\t'+x.codes.map(c=>c||'休').join('\t'));$('#staffText').value=lines.join('\n');if(S.anonMode){S.dayCounts=d.counts.slice(0,7);[0,1,2,3,4,5,6].forEach(i=>{$('#cnt'+i).value=S.dayCounts[i];});applyAnon();st.textContent=`読み込み完了: 外回り人数 ${d.days.map((x,i)=>x+':'+d.counts[i]).join(' ')}（${d.staff.length}名分）`;}else{const parsed=parseStaff(lines.join('\n'));state.staff=parsed;state.routes={};state.unassigned=[];save();renderAll();st.textContent=`読み込み完了: ${parsed.length}名（施設常駐・夜勤は除外済み）`;}}catch(e){st.textContent='失敗: '+e.message;toast('読み込みに失敗しました');}$('#btnGasLoad').disabled=false;}
+$('#btnGasLoad').addEventListener('click',gasLoad);
+$('#modeNamed').addEventListener('change',()=>{if($('#modeNamed').checked){state.settings.anonMode=false;save();toast('スタッフ名で指定するモードにしました。②に全体シフトを貼り付けてください');renderAll();}});
+$('#modeAnon').addEventListener('change',()=>{if($('#modeAnon').checked){applyAnon();}});
+$('#btnAddStaff').addEventListener('click',()=>{state.staff.push({id:uid(),name:'',work:[false,true,true,true,true,true,false],winText:''});save();renderStaff();});
+$('#btnSaveSettings').addEventListener('click',readSettings);$('#btnGeoOffice').addEventListener('click',()=>{readSettings();geoOffice();});
+$('#btnPlan').addEventListener('click',()=>{if(!state.staff.length){toast('②でスタッフを入れてください');return;}if(!state.patients.some(p=>p.lat!=null)){toast('①で住所を地図に配置してください');return;}$('#planStatus').textContent='作成中…';$('#btnPlan').disabled=true;setTimeout(()=>{const t0=performance.now();plan();save();renderPlan();renderGrid();$('#planStatus').textContent=`完了（${((performance.now()-t0)/1000).toFixed(1)}秒）`;$('#btnPlan').disabled=false;},30);});
+$('#btnSave').addEventListener('click',downloadJSON);$('#btnSharedReload').addEventListener('click',async()=>{if(syncDirty&&!confirm('未保存の変更があります。破棄して共有データを読み直しますか？'))return;const ok=await sharedLoad();if(ok){renderAll();toast('共有データを読み直しました');}});$('#btnLoad').addEventListener('click',()=>$('#fileLoad').click());
+$('#fileLoad').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o.patients)throw 0;adoptState(o);save();renderAll();toast('読み込みました');}catch(err){toast('読み込めないファイルです');}e.target.value='';});
+$('#autosave').addEventListener('change',e=>{if(e.target.checked)save();else{try{localStorage.removeItem('vrt_honten');}catch(x){}toast('この端末への自動保存を止めました');}});
+
+/* ========= 起動 ========= */
+(async function init(){initSplits();initMapHeightBar();try{new ResizeObserver(()=>{try{mapWeekly&&mapWeekly.invalidateSize();}catch(e){}}).observe(document.getElementById('mapWeekly'));}catch(e){}mapPat=mkMap('mapPat');patLayer=L.layerGroup().addTo(mapPat);mapRoute=mkMap('mapRoute');routeLayer=L.layerGroup().addTo(mapRoute);mapWeekly=mkMap('mapWeekly');mapWeekly.on('zoomend',applyPinScale);mapPat&&mapPat.on('zoomend',applyPinScale);setTimeout(applyPinScale,0);weeklyLayer=L.layerGroup().addTo(mapWeekly);let had=false;if(GAS){had=await sharedLoad();$('#btnSharedReload').hidden=false;$('#autosaveWrap').hidden=true;$('#sGasUrl').closest('.field').hidden=true;$('#sGasToken').closest('.field').hidden=true;}if(!had)had=load();if(GAS){state.settings.gasUrl=GAS.url;state.settings.gasToken=GAS.token;}if(!had){state.patients=parsePatients(SAMPLE.map(r=>r.join('\t')).join('\n'),state.settings);state.staff=parseStaff(SAMPLE_STAFF.map(r=>r.join('\t')).join('\n'));$('#patText').value='';toast('サンプルデータを表示しています。①に貼り付けて置き換えてください');}if(state.weekly&&Array.isArray(state.weekly.days))state.weekly.days.forEach(d=>(d.rows||[]).forEach(r=>{r.show=false;}));renderAll();let t='patients';try{t=localStorage.getItem('vrt_tab')||'patients';}catch(e){}wSyncWeek();if(GAS){document.title='訪問ルート '+BR_LABEL;$('#appTitle').textContent='訪問ルート '+BR_LABEL;if(!GAS.locked&&GAS.branches&&GAS.branches.length>1){const sel=$('#branchSel');sel.innerHTML=GAS.branches.map(b=>`<option value="${b.key}" ${b.key===BRANCH?'selected':''}>${esc(b.label)}</option>`).join('');sel.hidden=false;sel.addEventListener('change',()=>{const k=sel.value;if(k===BRANCH)return;if(syncDirty&&!confirm('未保存の変更があります。切り替えますか？')){sel.value=BRANCH;return;}const u=GAS.url+'?page=1&token='+encodeURIComponent(GAS.token)+'&branch='+encodeURIComponent(k)+'&sw=1';try{window.open(u,'_top');}catch(e){}try{window.top.location.href=u;}catch(e){location.href=u;}});}}
+if(GAS){document.body.classList.add('gas');const relabel=(sel,txt)=>{const b=$(sel);if(!b)return;const tn=[...b.childNodes].find(n=>n.nodeType===3);if(tn)tn.nodeValue=txt;else b.insertBefore(document.createTextNode(txt),b.firstChild);};relabel('nav.tabs button[data-tab="patients"]','① 利用者と住所');relabel('nav.tabs button[data-tab="weekly"]','② 週間シフト');if(t!=='patients'&&t!=='weekly')t='weekly';}showTab(t);})();
+</script>
+<script>
+// 起動: アドレスの合言葉で GAS から支店の設定を受け取ってから本体を動かす
+(function(){
+  var API='https:\/\/script.google.com/macros/s/AKfycbwUNZRZZrUT_OjMb79LrJT8uVpsygxNN2vfMd5xorWkUXaaU8ypolFdmOIQyvhOiHU-/exec';
+  var q=new URLSearchParams(location.search);
+  var token=q.get('token')||'';var branch=q.get('branch')||'honten';var sw=q.get('sw');
+  function fail(msg){document.body.innerHTML='<div style="font:15px/1.7 system-ui,sans-serif;max-width:560px;margin:60px auto;padding:0 16px;color:#1d2b2e"><h1 style="font-size:20px">訪問ルート</h1><p>'+msg+'</p></div>';}
+  function start(){var src=document.getElementById('appsrc');var sc=document.createElement('script');sc.textContent=src.textContent;document.body.appendChild(sc);}
+  if(!token){fail('合言葉付きのアドレスで開いてください。管理者から受け取ったアドレスを、そのまま開いてください。');return;}
+  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:token,fn:'config',args:[],branch:branch})})
+   .then(function(r){if(!r.ok)throw new Error('通信エラー '+r.status);return r.json();})
+   .then(function(j){if(!j||!j.ok)throw new Error((j&&j.error)||'設定を受け取れませんでした');var c=j.result;
+     window.GAS_CFG={url:location.origin+location.pathname,api:API,token:token,user:'',branch:c.branch,locked:!!q.get('branch')&&!sw,branches:c.branches,cfg:c.cfg};
+     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();})
+   .catch(function(e){fail('開けませんでした（'+String(e.message||e)+'）。アドレスの合言葉が正しいか確認してください。');});
+})();
+</script>
+</body>
+</html>
